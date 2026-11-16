@@ -1,0 +1,12 @@
+# 忽略系统文件和本机配置，示例配置应使用可提交的独立文件名。
+.DS_Store
+Thumbs.db
+local/
+.env
+.env.*
+!.env.example
+
+# 安装备份与临时产物不作为规范来源提交。
+.install-state/
+.backups/
+.tmp/
