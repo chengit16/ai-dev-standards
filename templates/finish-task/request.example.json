@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "mode": "index",
+  "paths": ["src/example.ts"],
+  "message": "fix: 修复示例模块的边界处理\n\n- 补齐空输入处理并保留已有行为\n"
+}

@@ -1,0 +1,3 @@
+interface:
+  display_name: "开发任务收尾"
+  short_description: "核对任务改动范围、执行实际检查并按策略提交，保留已有暂存和工作区内容"
