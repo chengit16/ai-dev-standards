@@ -7,7 +7,7 @@ description: 在一个可独立验收的开发任务完成后，核对任务范�
 
 ## 入口与策略
 
-本 Skill 随完整 ai-dev-standards 工具包使用；根目录为本文件上两级，先验证 `scripts/finish_task.py` 存在。具体参数、恢复和边界见[收尾使用说明](../../docs/finish-task.md)，请求结构见[任务请求示例](../../templates/finish-task/request.example.json)。缺少工具包资源时定位用户副本，不猜绝对路径或自动安装。
+本 Skill 随完整 ai-dev-standards 工具包使用；入口为符号链接时先解析本文件真实路径，根目录为实际文件上两级，先验证 `scripts/finish_task.py` 存在。具体参数、恢复和边界见[收尾使用说明](../../docs/finish-task.md)，请求结构见[任务请求示例](../../templates/finish-task/request.example.json)。缺少工具包资源时定位用户副本，不猜绝对路径或自动安装。
 
 读取当前项目规则与 `.ai-dev-standards/PROJECT.md`、`project.json`，确认本任务已经达到可验收状态。`local` 策略允许必要检查通过后自动本地提交；`manual` 只生成说明和执行已授权检查，用户明确要求本次提交时才应用。当前明确指令优先；“本次不要提交”必须保持不提交。直接调用本 Skill 也不自动授权推送。
 
@@ -33,4 +33,4 @@ description: 在一个可独立验收的开发任务完成后，核对任务范�
 
 先预览目标分支的全部待推送祖先，核实每个提交均获授权，再用 `--allow-commit <完整 SHA>` 逐项列明并加 `--apply`。推送失败保留本地提交；重试只运行 push，不重新 commit。当前实现要求远程查询与推送地址一致且唯一，不设置 upstream，不强推、不自动合并或变基。目标分叉、网络或认证错误时停止。
 
-交付报告提交说明、实际检查及其上下文、SHA、剩余修改和推送结果。根据 `.git/ai-dev-standards/finish-*/report.json` 区分未提交、已提交待复核和已完成；Git worktree 位置以 `git rev-parse --absolute-git-dir` 为准。仅完成脚本测试不等于 Skill 已安装或新会话已加载；这些留待 M2 和用户本机验收。
+交付报告提交说明、实际检查及其上下文、SHA、剩余修改和推送结果。根据 `.git/ai-dev-standards/finish-*/report.json` 区分未提交、已提交待复核和已完成；Git worktree 位置以 `git rev-parse --absolute-git-dir` 为准。仅完成脚本测试不等于 Skill 已安装或新会话已加载；文件部署由 M2 提供，实际加载留待用户本机验收。

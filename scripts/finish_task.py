@@ -8,6 +8,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# 安装副本需保持清单一致，运行入口不生成额外字节码缓存。
+sys.dont_write_bytecode = True
+
 from bootstrap.model import BootstrapError
 from finish.git import Repository
 from finish.push import push

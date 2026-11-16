@@ -13,7 +13,7 @@ Skill 判断需求是否完成、修改归属、检查是否充分与推送是�
 | 本次不要提交 | 当前指令优先，不运行提交入口 |
 | 明确要求推送或明确启用推送策略 | 本地提交后单独核实目标与全部待推送历史再推送 |
 
-M3 的 `project.json` 仍只支持 local/manual；M4 没有把推送变成默认值。已有 `git-commit-message` 用户级 Skill 未被修改；新流程吸收其范围核对与中文信息规则，但直接调用 finish-task 不附带推送授权。两个入口的安装兼容与迁移在 M2 处理。
+M3 的 `project.json` 仍只支持 local/manual；M4 没有把推送变成默认值。已有 `git-commit-message` 用户级 Skill 未被修改；新流程吸收其范围核对与中文信息规则，但直接调用 finish-task 不附带推送授权。M2 已提供旧入口检测与明确保留选项，具体见[安装说明](installation.md)。
 
 ## 任务请求
 
@@ -87,4 +87,4 @@ python3 scripts/finish_task.py push --project ../my-project --remote origin --br
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 ```
 
-实际结果与边界见 [M4 验证记录](verification/m4-finish-task.md)。用户级安装、自动触发和新会话加载留待 M2 与最后统一验收。
+实际结果与边界见 [M4 验证记录](verification/m4-finish-task.md)。用户级安装、自动触发和新会话加载通过 M2 部署后在最后统一验收。

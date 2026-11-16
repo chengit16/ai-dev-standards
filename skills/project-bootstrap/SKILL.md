@@ -7,7 +7,7 @@ description: 在技术栈已确定且用户要求开发或接入规范时，为�
 
 ## 定位与范围
 
-本 Skill 随完整 ai-dev-standards 工具包使用。源码布局中，工具包根目录是本文件所在目录的上两级；执行前验证其中有 `standards/README.md` 和 `scripts/project_bootstrap.py`。单独拷贝本目录不能获得生成器和规范，缺少资源时先定位用户的工具包副本，不猜测绝对路径或自动安装。
+本 Skill 随完整 ai-dev-standards 工具包使用。若入口为符号链接，先解析本文件的真实路径；工具包根目录是实际所在目录的上两级，执行前验证其中有 `standards/README.md` 和 `scripts/project_bootstrap.py`。单独拷贝本目录不能获得生成器和规范，缺少资源时先定位用户的工具包副本，不猜测绝对路径或自动安装。
 
 读取[规范选择入口](../../standards/README.md)，需要操作说明时读取[初始化使用说明](../../docs/project-bootstrap.md)。生成器依赖 Python 3.11+ 和 Git，只操作用户指定的项目；不改用户级配置，不运行项目命令、不提交或推送。完成后的检查与本地提交仍按目标项目的授权和约定执行。
 

@@ -9,7 +9,16 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from .model import BEGIN, DIRECTORY, END, OWNER, BootstrapError, digest, json_bytes
+from .model import (
+    BEGIN,
+    DIRECTORY,
+    END,
+    OWNER,
+    BootstrapError,
+    digest,
+    json_bytes,
+    relative_path,
+)
 
 
 def read_regular(path: Path) -> bytes | None:
@@ -40,6 +49,34 @@ def source_version(toolkit: Path, content_id: str) -> dict:
 
     top = git("rev-parse", "--show-toplevel")
     if top is None or Path(top).resolve() != toolkit.resolve():
+        # 安装副本没有 .git，使用安装时的内容清单追溯；手工修改必须标记为脏快照。
+        stamp_path = toolkit / "_toolkit-source.json"
+        if stamp_path.exists() or stamp_path.is_symlink():
+            stamp = json.loads(read_regular(stamp_path))
+            if (
+                not isinstance(stamp, dict)
+                or stamp.get("owner") != OWNER
+                or stamp.get("schema_version") != 1
+                or not isinstance(stamp.get("files"), dict)
+                or not isinstance(stamp.get("source"), dict)
+            ):
+                raise BootstrapError("安装来源记录无效，请先运行 doctor")
+            changed = False
+            for name, expected in stamp["files"].items():
+                path = toolkit / relative_path(name)
+                if not path.resolve().is_relative_to(toolkit.resolve()):
+                    raise BootstrapError("安装来源记录包含越界路径")
+                data = read_regular(path)
+                if data is None or digest(data) != expected:
+                    changed = True
+            source = stamp["source"]
+            return {
+                "repository": OWNER,
+                "git_commit": source.get("git_commit"),
+                "working_tree_dirty": True if changed else source.get("working_tree_dirty"),
+                "content_sha256": content_id,
+                "installation_content_sha256": source.get("content_sha256"),
+            }
         return {
             "repository": OWNER,
             "git_commit": None,

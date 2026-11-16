@@ -4,7 +4,7 @@ M3 已提供初始化 Skill、入口模板和确定性生成器。可直接从�
 
 ## 运行条件与入口
 
-需要 Python 3.11+ 和 Git，生成器只使用 Python 标准库。源码入口是 [project-bootstrap Skill](../skills/project-bootstrap/SKILL.md)，需连同工具包资源使用；当前未安装到用户级发现目录，不能据此声称已经自动加载。
+需要 Python 3.11+ 和 Git，生成器只使用 Python 标准库。源码入口是 [project-bootstrap Skill](../skills/project-bootstrap/SKILL.md)，需连同工具包资源使用；M2 可部署到用户级发现目录，步骤见[安装说明](installation.md)；源码存在或部署完成不能据此声称已经自动加载。
 
 首先阅读目标项目规则、技术栈配置与现有检查脚本。Skill 负责识别与取舍，生成器接受明确配置，不自行猜测技术栈或检查命令。新建项目至少已有一个目录；尚未建立检查工具时可把 checks 留空，生成结果会记录缺口。
 
@@ -87,7 +87,7 @@ python3 scripts/project_bootstrap.py --project ../my-project --config ../my-proj
 3. 核对 Git diff，确认 `.ai-dev-standards/` 没被项目忽略并纳入本次需要的版本记录；保持用户已有暂存边界。
 4. 用户安装后在新会话验证 AGENTS 入口、按修改范围读取规范以及 Skill 发现。脚本成功只证明文件已生成。
 
-Codex 在同目录优先读取 `AGENTS.override.md`，也存在嵌套规则及加载大小限制；因此脚本拒绝被根覆盖文件遮蔽的入口，Skill 还要核对子目录约定。详见[官方 AGENTS 文档](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。Skill 的 frontmatter 与发现方式见[官方 Skill 文档](https://learn.chatgpt.com/docs/build-skills)。生成文件无需全局安装即可被项目入口引用；Skill 的实际发现与加载留待 M2 和本机验收。
+Codex 在同目录优先读取 `AGENTS.override.md`，也存在嵌套规则及加载大小限制；因此脚本拒绝被根覆盖文件遮蔽的入口，Skill 还要核对子目录约定。详见[官方 AGENTS 文档](https://learn.chatgpt.com/docs/agent-configuration/agents-md)。Skill 的 frontmatter 与发现方式见[官方 Skill 文档](https://learn.chatgpt.com/docs/build-skills)。生成文件无需全局安装即可被项目入口引用；Skill 的实际发现与加载由 M2 部署后在本机验收。
 
 工具包自身的隔离测试命令：
 

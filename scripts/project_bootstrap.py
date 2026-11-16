@@ -8,6 +8,9 @@ import json
 import sys
 from pathlib import Path
 
+# 安装副本需保持清单一致，运行入口不生成受管目录外的字节码缓存。
+sys.dont_write_bytecode = True
+
 from bootstrap.model import DIRECTORY, BootstrapError, render, validate_config
 from bootstrap.storage import apply, inspect, source_version
 
