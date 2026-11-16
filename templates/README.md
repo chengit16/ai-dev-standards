@@ -1,7 +1,7 @@
 # 项目模板
 
-此目录预留给业务项目的规则入口、详细规范和检查配置模板。
+[project-bootstrap/AGENTS.block.md](project-bootstrap/AGENTS.block.md) 是生成到项目根目录的受管规则入口模板。[采用配置示例](project-bootstrap/config.example.json) 供 Skill 或用户填写技术栈范围、检查和差异。
 
-模板应生成仓库内相对引用，并记录使用的规范版本。重复生成须保留项目自定义内容。
+规范正文以 `standards/` 为权威来源，生成器只复制所选文档及本地链接依赖，不在此维护副本。PROJECT.md 和 manifest.json 由脚本按配置生成，均采用仓库内相对引用。
 
-当前尚未提供可生成的模板。
+使用方式、幂等行为与冲突处理见[项目初始化](../docs/project-bootstrap.md)。

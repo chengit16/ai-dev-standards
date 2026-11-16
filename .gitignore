@@ -10,3 +10,8 @@ local/
 .install-state/
 .backups/
 .tmp/
+
+# Python 本地运行缓存不属于规范来源。
+__pycache__/
+*.py[cod]
+.ruff_cache/

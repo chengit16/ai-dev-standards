@@ -1,0 +1,3 @@
+interface:
+  display_name: "项目规范初始化"
+  short_description: "按已确定技术栈生成项目规则、规范副本与检查清单，保留已有约定"
