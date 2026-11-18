@@ -28,4 +28,4 @@ ai-dev-standards create projects/react-nestjs --template react-nestjs --apply --
 - 以 M2 提交为来源部署旧副本，再用本次发行包预览并应用更新。重复更新返回 `unchanged`，新版命令可用。卸载后保留用户追加的全局规则，移除工具包拥有的 Skill 链接。
 - 对一次性 React 工程执行 M4，运行生成项目中登记的 5 项检查，只提交 `apps/web/index.html`，提交为 `b12d635f90b0fbc68b120be809c7f8e69c1abec2`。预先暂存的 `README.md` 仍在暂存区。
 
-M5.4 已在同一台 Mac 的不同目录和隔离用户布局完成发行文件与工作流演练。真实 Codex 新会话加载、第二台电脑验收、许可证选择及正式标签和公开发布仍待完成。使用步骤见[创建工程与验证](../project-scaffold.md)。
+M5.4 已在同一台 Mac 的不同目录和隔离用户布局完成发行文件与工作流演练。维护者于 2026-11-18 确认本机验收完成。第二台电脑验收、许可证选择及正式标签和公开发布仍待完成。使用步骤见[创建工程与验证](../project-scaffold.md)，首发范围见[发布确认稿](../release-scope.md)。

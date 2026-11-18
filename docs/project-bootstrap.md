@@ -1,4 +1,4 @@
-# 项目初始化使用说明
+# 接入项目规则
 
 M3 已提供初始化 Skill、入口模板和确定性生成器。可直接从完整工具包副本运行，不依赖 M2 的用户级安装。当前生成仓库内规范与检查清单；依赖安装、业务脚手架、检查工具接入及规范升级不在此命令范围内。
 
@@ -12,7 +12,21 @@ M3 已提供初始化 Skill、入口模板和确定性生成器。可直接从�
 
 ## 配置
 
-以[采用配置示例](../templates/project-bootstrap/config.example.json)为结构。下面展示 React + FastAPI 组合，假设目标项目已有 `apps/web`、`apps/api` 两个目录且前端确实声明了 `typecheck` 脚本：
+在工具包仓库根目录执行以下命令。配置文件放在目标项目之外，便于先检查和修改：
+
+```bash
+cp templates/project-bootstrap/config.example.json ../project-config.json
+```
+
+[采用配置示例](../templates/project-bootstrap/config.example.json)默认给仓库根目录的 React 项目使用，检查清单为空。按项目调整 `stacks`。单独使用后端时，只填写对应的后端键。
+
+| 项目 | `stacks` 示例 |
+| --- | --- |
+| React 在仓库根目录 | `{"react-vite": ["."]}` |
+| React + FastAPI | `{"react-vite": ["apps/web"], "fastapi": ["apps/api"]}` |
+| React + NestJS（Fastify） | `{"react-vite": ["apps/web"], "nestjs-fastify": ["apps/api"]}` |
+
+如果项目采用 `frontend/` 和 `backend/` 等结构，就填实际目录。下面是 React + FastAPI 的完整配置示例，假设前端确实声明了 `typecheck` 脚本：
 
 ```json
 {
@@ -41,11 +55,19 @@ M3 已提供初始化 Skill、入口模板和确定性生成器。可直接从�
 在工具包根目录运行以下命令，将示例路径替换为目标项目和已准备的配置文件：
 
 ```bash
-python3 scripts/project_bootstrap.py --project ../my-project --config ../project-config.json
-python3 scripts/project_bootstrap.py --project ../my-project --config ../project-config.json --apply
+./scripts/ai-dev-standards bootstrap --project ../my-project --config ../project-config.json
+./scripts/ai-dev-standards bootstrap --project ../my-project --config ../project-config.json --apply
 ```
 
 第一条只显示拟生成的文件和 AGENTS 区块差异，不创建目录。第二条应用同一配置，不修改包管理配置、现有检查脚本或用户级规则。已有 `AGENTS.md` 的内容按原字节保留，在末尾追加一个带归属标记的区块。
+
+应用后，若配置已登记检查命令，先按项目现有说明准备依赖，再运行：
+
+```bash
+./scripts/ai-dev-standards verify --project ../my-project
+```
+
+`bootstrap` 负责写入规则，`verify` 执行已登记的检查。检查清单为空时，`verify` 会报告没有登记命令。使用安装后的短命令或发行包时，见[命令入口](project-scaffold.md#命令入口)。
 
 生成结构：
 
@@ -71,7 +93,7 @@ python3 scripts/project_bootstrap.py --project ../my-project --config ../project
 用生成的配置再次执行：
 
 ```bash
-python3 scripts/project_bootstrap.py --project ../my-project --config ../my-project/.ai-dev-standards/project.json --apply
+./scripts/ai-dev-standards bootstrap --project ../my-project --config ../my-project/.ai-dev-standards/project.json --apply
 ```
 
 内容一致时不改文件或修改时间。用户在 AGENTS 受管区块外的新增内容不影响幂等检查；清单外的项目资料也不会被删除。

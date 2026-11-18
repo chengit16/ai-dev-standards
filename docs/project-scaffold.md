@@ -8,17 +8,41 @@
 | `react-fastapi` | `apps/web`、`apps/api` | 前端检查、Ruff、mypy、pytest，以及前后端连通与失联检查 |
 | `react-nestjs` | `apps/web`、`apps/api` | 前后端格式、Lint、类型、构建、Fastify 注入测试及连通与失联检查 |
 
-## 从本地工具包使用
+## 命令入口
+
+使用完整工具包源码时，在仓库根目录运行 `./scripts/ai-dev-standards`。使用已安装的副本并配置下文的 `PATH` 后，可从其他目录运行 `ai-dev-standards`。使用发行包时，将上述命令换成 `python3 "$release_file.pyz"`，其后的 `bootstrap`、`create`、`verify` 及参数相同。相对路径以运行命令时所在的目录为准。
+
+已有工程只想接入规则时，使用 [`bootstrap` 流程](project-bootstrap.md#预览与生成)。以下是用模板新建工程的用法。
+
+## 从模板新建工程
 
 在工具包源码目录执行。将 `../my-app` 换成目标路径，父目录须已存在。
 
 ```bash
-scripts/ai-dev-standards create ../my-app --template react-fastapi
-scripts/ai-dev-standards create ../my-app --template react-fastapi --apply --install --verify
-scripts/ai-dev-standards verify --project ../my-app
+# 预览 React + FastAPI 的生成清单
+./scripts/ai-dev-standards create ../my-app --template react-fastapi --install --verify
 ```
 
-第一条只预览输出文件和计划执行的步骤。第二条生成基础工程、接入 [M3 规范](project-bootstrap.md)，从锁文件安装依赖，并执行采用配置记录的检查。单独使用 `--apply` 可以先生成文件。需要新建 Git 仓库时加 `--git`，任务提交交给 [M4 收尾](finish-task.md)。
+确认后，任选一个组合：
+
+```bash
+./scripts/ai-dev-standards create ../my-react-app --template react-vite --apply --install --verify
+./scripts/ai-dev-standards create ../my-fastapi-app --template react-fastapi --apply --install --verify
+./scripts/ai-dev-standards create ../my-nestjs-app --template react-nestjs --apply --install --verify
+```
+
+| 参数 | 作用 |
+| --- | --- |
+| `--apply` | 生成工程文件并接入 M3 规则。省略时只预览。 |
+| `--install` | 从锁文件安装项目依赖，可以单独随 `--apply` 使用。 |
+| `--verify` | 执行项目登记的检查。已有依赖时可省略 `--install`。 |
+| `--git` | 初始化独立 Git 仓库，任务提交见[开发收尾](finish-task.md)。 |
+
+模板自带规范目录映射和检查清单。生成后可用以下命令单独重跑检查：
+
+```bash
+./scripts/ai-dev-standards verify --project ../my-fastapi-app
+```
 
 `verify` 会执行项目 `.ai-dev-standards/project.json` 登记的命令，只对信任的项目执行。检查失败时打开输出定位失败项，工程仍可继续修改。补装依赖或修复后重新执行 `verify`。模板启动方式见生成的 `README.md`。
 
@@ -42,7 +66,14 @@ shasum -a 256 -c "$release_file.sha256" &&
   python3 "$release_file.pyz" create ../my-app --template react-fastapi
 ```
 
-直接执行发行包即可使用项目命令。需要安装 Codex 规则和 Skills 时，使用同一发行包按[安装说明](installation.md)依次预览、应用与诊断：
+校验通过后，用同一个发行包可以给已有项目接入规则，也可以创建并验证新工程。已有项目的命令默认预览，确认后加 `--apply`。
+
+```bash
+python3 "$release_file.pyz" bootstrap --project ../my-project --config ../project-config.json
+python3 "$release_file.pyz" create ../my-app --template react-fastapi --apply --install --verify
+```
+
+需要安装 Codex 规则和 Skills 时，使用同一发行包按[安装说明](installation.md)依次预览、应用与诊断：
 
 ```bash
 python3 "$release_file.pyz" install --legacy-policy keep

@@ -2,14 +2,14 @@
 
 M2 提供 `scripts/toolkit.py`。当前完成 macOS 隔离验证，使用 Python 3.11+ 标准库和 Git；显式恢复使用 POSIX 文件锁，Windows 及其他操作系统尚未验收。所有写操作默认预览，只有添加 `--apply` 才应用。本次开发未向真实用户目录安装，也未更改现有全局配置。
 
-M5 的固定提交发行包可以直接执行这些生命周期命令，获取与校验方式见[创建工程与验证](project-scaffold.md#使用固定版本的发行文件)。
+M5 提供统一入口 `./scripts/ai-dev-standards`。本页的安装命令启用用户级规则和 Skills，适合希望在多个 Codex 项目中使用的情况。已有项目可以单独[接入项目规则](project-bootstrap.md)，新项目可以[从模板创建工程](project-scaffold.md)，两种项目操作都可直接从完整工具包或发行包执行。[发行包获取与校验](project-scaffold.md#使用固定版本的发行文件)
 
 ## 本机首次验收
 
 在完整工具包仓库根目录运行：
 
 ```bash
-python3 scripts/toolkit.py install
+./scripts/ai-dev-standards install
 ```
 
 核对输出的目标目录、拟变更资源与文件清单。默认将全局区块写入所选 Codex home 的 `AGENTS.md`，在其中保留一份完整工具包副本，并为两个 Skill 建立链接。
@@ -17,12 +17,12 @@ python3 scripts/toolkit.py install
 如果检测到旧 `git-commit-message`，安装器会停止。明确保留旧入口时，先预览，再应用：
 
 ```bash
-python3 scripts/toolkit.py install --legacy-policy keep
-python3 scripts/toolkit.py install --legacy-policy keep --apply
-python3 scripts/toolkit.py doctor
+./scripts/ai-dev-standards install --legacy-policy keep
+./scripts/ai-dev-standards install --legacy-policy keep --apply
+./scripts/ai-dev-standards doctor
 ```
 
-没有旧入口时可直接使用 `python3 scripts/toolkit.py install --apply`。`keep` 不改写或禁用旧 Skill；受管全局规则将默认收尾路由到 `finish-task`，旧入口只在用户明确点名时使用。旧 Skill 的自动匹配不能额外授权推送。以后更新会保留已经记录的选择。
+没有旧入口时，在预览确认后可使用 `./scripts/ai-dev-standards install --apply`。`keep` 会保留旧 Skill，受管全局规则默认使用 `finish-task`，旧入口在用户明确点名时使用。推送需要明确授权。以后更新会保留已经记录的选择。
 
 `doctor` 返回 `deployed` 只表示受管文件、链接与清单一致，`host_loading` 始终为 `not_verified`。下一步在目标项目新建会话：
 
