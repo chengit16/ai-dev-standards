@@ -26,6 +26,7 @@ M5 已提供三套空白工程模板、创建和验证命令，以及可从固�
 - [开发规范库](standards/README.md)：规范入口、组合方式与适用范围。
 - [项目初始化](docs/project-bootstrap.md)：M3 预览、生成、配置与冲突处理。
 - [创建工程与验证](docs/project-scaffold.md)：M5 模板创建、检查及免克隆发行包用法。
+- [M5 验证记录](docs/verification/m5-scaffold.md)：三种模板、发行包和收尾工作流的实际结果。
 - [开发收尾](docs/finish-task.md)：M4 范围核对、检查、本地提交与独立推送。
 - [项目规划](docs/project-plan.md)：方案、范围、工作流、里程碑与验收标准。
 - [项目维护约定](AGENTS.md)：维护本仓库时使用的规则。

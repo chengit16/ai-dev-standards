@@ -147,3 +147,5 @@ ai-dev-standards verify --project ./my-app
 - [ ] 完成 M5.4 实机验收，确定许可证与正式发布范围。
 
 本规划不包含业务功能开发、参考项目源码打包、已有应用的自动技术栈迁移、业务规范升级或规范提取 Skill。上述原有待办继续独立记录。
+
+实际执行环境和完整结果见[M5 验证记录](verification/m5-scaffold.md)。
