@@ -17,11 +17,11 @@ M5 已提供三套空白工程模板、创建和验证命令，以及可从固�
 3. 每完成一个可独立验收的开发任务，执行必要检查并按策略提交。
 4. 更新工具包时保留本机配置；更新业务项目规范时查看差异并合并。
 
-已有业务项目的规范升级仍属后续范围。
+已有业务项目可用 `upgrade-rules` 预览并显式升级规范。维护者也可使用 `extract-standards` 从参考项目整理可复用规范。
 
 ## 快速开始
 
-以下命令在工具包仓库根目录运行，目标路径按实际项目修改。两个入口都可以直接使用完整工具包。如果需要在本机启用全局规则和两个 Skill，见[安装说明](docs/installation.md)。
+以下命令在工具包仓库根目录运行，目标路径按实际项目修改。两个入口都可以直接使用完整工具包。如果需要在本机启用全局规则和工作流 Skills，见[安装说明](docs/installation.md)。
 
 ### 已有项目只接入规则
 
@@ -35,6 +35,8 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 ```
 
 这会写入项目的 `AGENTS.md` 和 `.ai-dev-standards/`。配置里有检查命令时，可执行 `./scripts/ai-dev-standards verify --project ../my-project`。配置字段和不同技术栈示例见[接入项目规则](docs/project-bootstrap.md)。
+
+已接入规则的项目可以用 `./scripts/ai-dev-standards upgrade-rules --project ../my-project` 查看新版差异，确认后添加 `--apply`。[项目规范升级](docs/project-bootstrap.md#升级已接入项目的规范)
 
 ### 从模板新建工程并接入规则
 
@@ -55,6 +57,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 
 - [安装与本机验收](docs/installation.md)：M2 预览、部署、诊断、更新、卸载与中断恢复。
 
+- [工作流 Skills](skills/README.md)：提取规范、接入项目和开发收尾。
 - [开发规范库](standards/README.md)：规范入口、组合方式与适用范围。
 - [接入项目规则](docs/project-bootstrap.md)：已有项目的配置、预览、应用和验证。
 - [创建工程与验证](docs/project-scaffold.md)：M5 模板创建、检查及免克隆发行包用法。
@@ -86,4 +89,4 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 
 ## 下一步
 
-维护者已确认本机验收通过。M5 的第二台电脑验收、许可证与公开发布范围仍待确认。规范提取 Skill 和已有业务项目的规范升级仍待实现。详见[项目规划](docs/project-plan.md)。
+维护者已确认本机及第二台电脑验收通过。规范提取 Skill 和项目规范升级已补齐。正式发行待确认许可证、版权署名和参考来源的公开范围。[首发确认稿](docs/release-scope.md)

@@ -118,12 +118,39 @@ class ToolkitTests(unittest.TestCase):
         self.assertTrue(self.agents.read_bytes().startswith(original))
         self.assertEqual(self.config.read_bytes(), config)
         self.assertEqual(doctor(self.layout)["host_loading"], "not_verified")
-        for name in ("project-bootstrap", "finish-task"):
+        for name in ("project-bootstrap", "finish-task", "extract-standards"):
             link = self.layout.skills / name
             self.assertTrue(link.is_symlink())
             self.assertTrue((link / "../../scripts/toolkit.py").is_file())
         self.assertTrue((self.layout.root / "bundle/standards/common/comments.md").is_file())
         self.assertEqual((Path(result["backup"]) / "before/agents").read_bytes(), original)
+
+    def test_legacy_two_skill_install_upgrades_without_claiming_user_skill(self):
+        source = self.source / "skills/extract-standards/SKILL.md"
+        new_skill = source.read_bytes()
+        source.unlink()
+        self.install()
+        link = self.layout.skills / "extract-standards"
+        self.assertFalse(link.exists())
+        self.assertEqual(doctor(self.layout)["status"], "deployed")
+        source.write_bytes(new_skill)
+        link.mkdir()
+        foreign = link / "SKILL.md"
+        foreign.write_text("用户的同名 Skill\n")
+        with self.assertRaises(InstallError):
+            manage(self.layout, self.source, "update", True)
+        self.assertEqual(foreign.read_text(), "用户的同名 Skill\n")
+        self.assertEqual(doctor(self.layout)["status"], "deployed")
+        foreign.unlink()
+        link.rmdir()
+        result = manage(self.layout, self.source, "update", True)
+        self.assertIn("extract-standards", result["changes"])
+        self.assertEqual((link / "SKILL.md").read_bytes(), new_skill)
+        self.assertEqual(doctor(self.layout)["status"], "deployed")
+        self.assertEqual(
+            manage(self.layout, self.source, "uninstall", True)["status"], "uninstalled"
+        )
+        self.assertFalse(link.is_symlink())
 
     def test_repeat_keeps_bytes_mtimes_and_backups(self):
         self.install()

@@ -12,7 +12,7 @@ M5 提供统一入口 `./scripts/ai-dev-standards`。本页的安装命令启用
 ./scripts/ai-dev-standards install
 ```
 
-核对输出的目标目录、拟变更资源与文件清单。默认将全局区块写入所选 Codex home 的 `AGENTS.md`，在其中保留一份完整工具包副本，并为两个 Skill 建立链接。
+核对输出的目标目录、拟变更资源与文件清单。默认将全局区块写入所选 Codex home 的 `AGENTS.md`，在其中保留一份完整工具包副本，并为工具包提供的 Skills 建立链接。
 
 如果检测到旧 `git-commit-message`，安装器会停止。明确保留旧入口时，先预览，再应用：
 
@@ -27,7 +27,7 @@ M5 提供统一入口 `./scripts/ai-dev-standards`。本页的安装命令启用
 `doctor` 返回 `deployed` 只表示受管文件、链接与清单一致，`host_loading` 始终为 `not_verified`。下一步在目标项目新建会话：
 
 1. 请助手指出本次读取的全局与项目规则来源，并确认中文文档、默认本地提交及推送单独授权。
-2. 确认 `project-bootstrap` 和 `finish-task` 可发现，真实路径指向本次安装副本；入口为符号链接时先解析实际目录。
+2. 确认 `project-bootstrap`、`finish-task` 和 `extract-standards` 可发现，真实路径指向本次安装副本；入口为符号链接时先解析实际目录。
 3. 在一次性测试仓库完成[项目初始化](project-bootstrap.md)，核对目录、差异与来源信息，重复执行应无需写入。
 4. 修改一个小功能并运行[开发收尾](finish-task.md)，验证真实检查、提交 SHA 与已有改动保留。未明确授权时不推送。
 
@@ -42,10 +42,11 @@ M5 提供统一入口 `./scripts/ai-dev-standards`。本页的安装命令启用
 | `CODEX_HOME/ai-dev-standards/manifest.json` | 记录安装布局、来源、文件指纹及旧 Skill 选择 |
 | `HOME/.agents/skills/project-bootstrap` | 指向安装副本中初始化 Skill 的链接 |
 | `HOME/.agents/skills/finish-task` | 指向安装副本中收尾 Skill 的链接 |
+| `HOME/.agents/skills/extract-standards` | 指向安装副本中规范提取 Skill 的链接 |
 | `CODEX_HOME/.ai-dev-standards-backups/` | 操作前后快照与恢复日志，卸载后仍保留 |
 | `CODEX_HOME/.ai-dev-standards.lock` | 并发与中断保护，记录进程、主机和对应事务 |
 
-未设置 `CODEX_HOME` 时默认使用 `~/.codex`；也可显式指定 `--codex-home`。Skill 用户目录仍基于 HOME，不跟着 CODEX_HOME 移动，因此同一用户不能把同名两个 Skill 同时安装到两个不同 profile。
+未设置 `CODEX_HOME` 时默认使用 `~/.codex`；也可显式指定 `--codex-home`。Skill 用户目录仍基于 HOME，不跟着 CODEX_HOME 移动，因此同一用户不能把同名 Skill 同时安装到两个不同 profile。
 
 此布局依据[官方 AGENTS 机制](https://learn.chatgpt.com/docs/agent-configuration/agents-md)及[官方 Skill 发现机制](https://learn.chatgpt.com/docs/build-skills)核对：全局覆盖文件优先，用户 Skill 目录支持符号链接，同名 Skill 不自动合并。安装器只检查所选用户布局；项目级、管理员、插件入口、运行中的宿主状态以及分层配置覆盖，仍需新会话核实。
 
@@ -81,7 +82,7 @@ python3 scripts/toolkit.py doctor
 
 全局区块之外的追加与修改按当前内容保留，不恢复历史整份 AGENTS 覆盖用户后续编辑。受管副本、受管区块或链接被修改、缺失，或目录中新添了文件和空目录时会停止，保留现场供比较。当前不提供强制覆盖或自动合并用户对受管资源的修改。
 
-安装清单记录 Git 提交和来源内容集合 SHA-256；未提交来源标记为工作树快照，不能当作发行版。无 Git 元数据的来源使用内容指纹并保留 Git 字段为空。安装副本中的 `_toolkit-source.json` 使 M3 初始化结果继续记录来源提交和安装指纹；文件被手工改动时不能伪称干净版本。工具包更新不会自动升级已有业务项目规范。
+安装清单记录 Git 提交和来源内容集合 SHA-256；未提交来源标记为工作树快照，不能当作发行版。无 Git 元数据的来源使用内容指纹并保留 Git 字段为空。安装副本中的 `_toolkit-source.json` 使 M3 初始化结果继续记录来源提交和安装指纹；文件被手工改动时不能伪称干净版本。旧版安装可以直接更新并新增提取 Skill 链接。若发现用户已有同名入口，更新会报告冲突。业务项目使用独立的[规范升级命令](project-bootstrap.md#升级已接入项目的规范)。
 
 ## 卸载
 
@@ -117,4 +118,4 @@ python3 scripts/toolkit.py doctor
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 ```
 
-本次实际结果见 [M2 验证记录](verification/m2-installation.md)。M2 交付源码与隔离验证；正式版本发布、许可证选择、本机和另一独立环境验收属于后续 M5。规范提取 Skill 仍待实现，不因安装器完成就把它计为已交付。
+本次实际结果见 [M2 验证记录](verification/m2-installation.md)。M2 的原始验证覆盖当时的安装入口。后续实机与分发验收见 [M5 验证记录](verification/m5-scaffold.md)。

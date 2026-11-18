@@ -15,6 +15,7 @@ from .model import (
     InstallError,
     Layout,
     bundle,
+    bundled_skills,
     encoded,
     global_block,
     locate_block,
@@ -34,7 +35,7 @@ def installed(layout: Layout) -> tuple[dict | None, bytes | None]:
     if root["kind"] == "missing":
         if agents and (BEGIN.encode() in agents or END.encode() in agents):
             raise InstallError("发现孤立全局区块，缺少安装清单，不能自动认领")
-        if any(node(layout.skills / name)["kind"] != "missing" for name in SKILLS):
+        if any(node(layout.skills / name)["kind"] != "missing" for name in bundled_skills({})):
             raise InstallError("同名 Skill 已存在但没有安装清单，不能自动认领")
         return None, agents
     if root["kind"] != "directory":
@@ -66,14 +67,16 @@ def installed(layout: Layout) -> tuple[dict | None, bytes | None]:
     if agents is None:
         raise InstallError("安装记录存在但全局入口已丢失")
     locate_block(agents, state["block"].encode())
-    for name in SKILLS:
+    for name in bundled_skills(state["files"], "bundle/"):
         expected = {"kind": "link", "target": str(layout.root / "bundle/skills" / name)}
         if node(layout.skills / name) != expected:
             raise InstallError(f"Skill 链接被修改或丢失：{name}")
     return state, agents
 
 
-def host_issues(layout: Layout, legacy_policy: str) -> tuple[list[str], list[str]]:
+def host_issues(
+    layout: Layout, legacy_policy: str, skills: tuple[str, ...]
+) -> tuple[list[str], list[str]]:
     """只读检查所选用户布局；项目、管理员和插件层仍需新会话核实。"""
     errors, warnings = [], []
     override = regular(layout.codex / "AGENTS.override.md")
@@ -84,7 +87,7 @@ def host_issues(layout: Layout, legacy_policy: str) -> tuple[list[str], list[str
     entries = config.get("skills", {}).get("config", [])
     if not isinstance(entries, list) or any(not isinstance(item, dict) for item in entries):
         raise InstallError("config.toml 的 skills.config 结构无效")
-    for name in SKILLS:
+    for name in skills:
         enabled = True
         paths = {
             str(layout.skills / name / "SKILL.md"),
@@ -116,7 +119,7 @@ def host_issues(layout: Layout, legacy_policy: str) -> tuple[list[str], list[str
             )
             if declared == "git-commit-message":
                 legacy.append(str(skill))
-            if declared in SKILLS and entry != layout.skills / declared:
+            if declared in skills and entry != layout.skills / declared:
                 errors.append(f"其他用户目录有同名 Skill：{skill}")
     if legacy:
         message = "检测到旧 git-commit-message；" + "、".join(legacy)
@@ -136,7 +139,8 @@ def doctor(layout: Layout) -> dict:
     state = None
     try:
         state, agents = installed(layout)
-        errors, warnings = host_issues(layout, state["legacy_policy"] if state else "stop")
+        skills = bundled_skills(state["files"], "bundle/") if state else SKILLS
+        errors, warnings = host_issues(layout, state["legacy_policy"] if state else "stop", skills)
         problems.extend(errors)
         if agents and len(agents) > 32768:
             warnings.append("全局入口超过 32 KiB，请核对宿主实际加载预算和项目规则总量")
@@ -178,10 +182,20 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
     if action == "update" and state is None:
         raise InstallError("尚未安装，请先 install")
     policy = legacy or (state["legacy_policy"] if state else "stop")
-    errors, warnings = host_issues(layout, policy)
+    owned = bundled_skills(state["files"], "bundle/") if state else ()
+    if action == "uninstall":
+        skills = owned
+    else:
+        files, version = bundle(source)
+        skills = bundled_skills(files)
+    errors, warnings = host_issues(layout, policy, skills)
     if action != "uninstall" and errors:
         raise InstallError("；".join(errors))
-    expected = {key: node(path) for key, path in layout.targets().items()}
+    active = {"agents", "root", *owned, *skills}
+    expected = {key: node(path) for key, path in layout.targets().items() if key in active}
+    for name in set(skills) - set(owned):
+        if expected[name]["kind"] != "missing":
+            raise InstallError(f"Skill 目录同名内容不属于本工具包：{name}")
     if action == "uninstall":
         start, stop = locate_block(original, state["block"].encode())
         separator = state["separator"].encode()
@@ -191,18 +205,14 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
         if updated or not state["agents_created"]:
             (stage / "agents").write_bytes(updated)
             (stage / "agents").chmod(expected["agents"]["mode"])
-        desired = {key: node(stage / key) for key in layout.targets()}
+        desired = {key: node(stage / key) for key in expected}
     else:
-        files, version = bundle(source)
         block = global_block(source)
         if state:
             start, stop = locate_block(original, state["block"].encode())
             updated = original[:start] + block + original[stop:]
             separator, created = state["separator"], state["agents_created"]
         else:
-            for name in SKILLS:
-                if expected[name]["kind"] != "missing":
-                    raise InstallError(f"Skill 目录同名内容不属于本工具包：{name}")
             separator = "" if not original else ("\n" if original.endswith(b"\n") else "\n\n")
             updated = (original or b"") + separator.encode() + block
             created = original is None
@@ -227,11 +237,11 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
         (stage / "root/manifest.json").chmod(0o644)
         (stage / "agents").write_bytes(updated)
         (stage / "agents").chmod(expected["agents"].get("mode", 0o644))
-        for name in SKILLS:
+        for name in skills:
             (stage / name).symlink_to(
                 layout.root / "bundle/skills" / name, target_is_directory=True
             )
-        desired = {key: node(stage / key) for key in layout.targets()}
+        desired = {key: node(stage / key) for key in expected}
         if action == "install" and state and expected != desired:
             raise InstallError("已安装内容与来源不同；请使用 update 显式更新")
     changes = [key for key in desired if expected[key] != desired[key]]

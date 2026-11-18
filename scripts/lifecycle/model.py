@@ -11,10 +11,23 @@ from dataclasses import dataclass
 from pathlib import Path
 
 OWNER = "ai-dev-standards"
-SKILLS = ("project-bootstrap", "finish-task")
+BASE_SKILLS = ("project-bootstrap", "finish-task")
+SKILLS = (*BASE_SKILLS, "extract-standards")
 BEGIN = "<!-- AI-DEV-STANDARDS:GLOBAL:BEGIN -->"
 END = "<!-- AI-DEV-STANDARDS:GLOBAL:END -->"
 STAMP = "_toolkit-source.json"
+
+
+def bundled_skills(files: dict, prefix: str = "") -> tuple[str, ...]:
+    """按受管资源判断 Skill 集合，使两项 Skill 的旧安装可直接升级。"""
+    return (
+        *BASE_SKILLS,
+        *(
+            name
+            for name in SKILLS
+            if name not in BASE_SKILLS and f"{prefix}skills/{name}/SKILL.md" in files
+        ),
+    )
 
 
 class InstallError(Exception):

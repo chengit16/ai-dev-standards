@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from bootstrap.model import BootstrapError
+from bootstrap.upgrade import recover_upgrade, upgrade
 from lifecycle.model import InstallError
 
 from .project import create, run_steps, verify
@@ -44,6 +45,12 @@ def main(argv: list[str] | None = None) -> int:
     make.add_argument("--git", action="store_true", help="初始化独立 Git 仓库")
     check = sub.add_parser("verify", help="运行项目采用配置中的检查")
     check.add_argument("--project", type=Path, default=Path("."))
+    rules = sub.add_parser("upgrade-rules", help="预览或升级已有项目的规范")
+    rules.add_argument("--project", type=Path, required=True)
+    choice = rules.add_mutually_exclusive_group()
+    choice.add_argument("--config", type=Path, help="显式提供新采用配置")
+    choice.add_argument("--recover", type=Path, help="核对或恢复中断的升级事务")
+    rules.add_argument("--apply", action="store_true", help="应用升级或恢复，默认只预览")
     release = sub.add_parser("release", help="从固定 Git 提交构建发行包")
     release.add_argument("--ref", required=True)
     release.add_argument("--output", type=Path, required=True)
@@ -63,6 +70,17 @@ def main(argv: list[str] | None = None) -> int:
         if raw.is_symlink():
             raise BootstrapError("目标不能是符号链接")
         project = raw.resolve()
+        if options.action == "upgrade-rules":
+            if project.is_relative_to(toolkit) or toolkit.is_relative_to(project):
+                raise BootstrapError("目标必须是工具包之外的业务项目")
+            if options.recover:
+                result = recover_upgrade(
+                    project, options.recover.expanduser().resolve(), options.apply
+                )
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                upgrade(toolkit, project, options.config, options.apply)
+            return 0
         if options.action == "verify":
             return 0 if verify(project, options.timeout) else 1
         report, installs = create(

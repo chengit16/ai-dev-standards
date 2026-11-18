@@ -1,6 +1,6 @@
 # 首次发布确认稿
 
-状态：待确认。建议首发标签为 `v0.1.0`，发布渠道为现有公开的 [GitHub 仓库](https://github.com/chengit16/ai-dev-standards)。维护者已确认本机验收完成。[M5 验证记录](verification/m5-scaffold.md)
+状态：待确认。建议首发标签为 `v0.1.0`，发布渠道为现有公开的 [GitHub 仓库](https://github.com/chengit16/ai-dev-standards)。维护者已确认本机和第二台电脑验收通过。[M5 验证记录](verification/m5-scaffold.md)
 
 ## 许可证建议
 
@@ -12,14 +12,14 @@
 
 | 公开位置 | 内容 |
 | --- | --- |
-| GitHub 源码与历史 | CLI、规则、两项 Skill、三套空白工程模板及其依赖声明与锁文件、用户文档、测试和合成样例。 |
+| GitHub 源码与历史 | CLI、规则、三项 Skill、三套空白工程模板及其依赖声明与锁文件、用户文档、测试和合成样例。 |
 | GitHub Release | 固定提交的 `.pyz`、同名 `.sha256`、使用说明与兼容范围。GitHub 另提供标签对应的源码归档。 |
 | 本机保存 | 实际业务项目及数据、参考项目源码、本机配置、浏览器记录、安装备份、凭证、依赖目录与测试产物。 |
 
-首发面向已验证的 macOS 环境。项目入口包括[已有工程接入规则](project-bootstrap.md)和[从模板创建并验证](project-scaffold.md)。第二台电脑实测仍待记录。[GitHub Release 说明](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
+首发面向已验证的 macOS 环境。项目入口包括[已有工程接入规则](project-bootstrap.md)和[从模板创建并验证](project-scaffold.md)。[GitHub Release 说明](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)
 
 ## 参考来源与待确认项
 
-待推送历史和当前的规范文档含参考项目名称、固定提交和内部文件路径。建议公开通用规则和技术取舍，将这些内部定位信息留在本地。如果采用该范围，应从公开发布分支的全部待推送历史中移除这些定位信息，只修改最新文件仍会让旧提交暴露它们。若权利人允许公开指定来源，可保留相应署名或引用。任何直接沿用的第三方内容仍需按其原许可及授权条件处理。
+当前公开 main 的历史和规范文档含参考项目名称、固定提交和内部文件路径。建议首发资产仅公开通用规则和技术取舍，精确来源记录保存在本地。若范围还要求从公开 Git 历史移除这些信息，须单独处理相关历史及已有副本。对最新文件的修改只影响新快照。若权利人允许公开指定来源，可保留相应署名或引用。任何直接沿用的第三方内容仍需按其原许可及授权条件处理。
 
 请确认是否采用 MIT、版权声明名称，以及参考项目标识是否保留。范围确定后，从拟发布提交重新构建带许可的发行包并核对内容，再执行经授权的推送、打标签及发布。

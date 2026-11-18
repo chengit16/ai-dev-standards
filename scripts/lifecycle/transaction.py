@@ -9,8 +9,23 @@ import socket
 import tempfile
 import uuid
 from pathlib import Path
+from typing import Protocol
 
-from .model import OWNER, InstallError, Layout, encoded, node, regular
+from .model import OWNER, InstallError, encoded, node, regular
+
+
+class TransactionLayout(Protocol):
+    """安装与项目规则升级各自限定事务可写资源和备份归属。"""
+
+    @property
+    def lock(self) -> Path: ...
+
+    @property
+    def backups(self) -> Path: ...
+
+    def targets(self) -> dict[str, Path]: ...
+
+    def identity(self) -> dict: ...
 
 
 def save(path: Path, value: object) -> None:
@@ -57,7 +72,7 @@ def publish(target: Path, stored: Path, description: dict, transaction: Path) ->
         shutil.rmtree(staging)
 
 
-def read_journal(layout: Layout, transaction: Path) -> dict:
+def read_journal(layout: TransactionLayout, transaction: Path) -> dict:
     if (
         transaction.parent != layout.backups
         or not transaction.name.startswith("txn-")
@@ -82,7 +97,7 @@ def read_journal(layout: Layout, transaction: Path) -> dict:
     return journal
 
 
-def rollback(layout: Layout, transaction: Path, journal: dict) -> None:
+def rollback(layout: TransactionLayout, transaction: Path, journal: dict) -> None:
     """先完整核对后续修改，再恢复；不能用过时备份覆盖用户的新内容。"""
     targets = layout.targets()
     for key in journal["touched"]:
@@ -107,9 +122,11 @@ def rollback(layout: Layout, transaction: Path, journal: dict) -> None:
     save(transaction / "journal.json", journal)
 
 
-def transact(layout: Layout, action: str, expected: dict, desired: dict, staging: Path) -> Path:
+def transact(
+    layout: TransactionLayout, action: str, expected: dict, desired: dict, staging: Path
+) -> Path:
     """apply 唯一写入口；异常可回滚，无法确认完成时保留锁和日志。"""
-    layout.codex.mkdir(parents=True, exist_ok=True)
+    layout.lock.parent.mkdir(parents=True, exist_ok=True)
     descriptor = os.open(layout.lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     settled = False
     transaction = None
@@ -192,7 +209,7 @@ def transact(layout: Layout, action: str, expected: dict, desired: dict, staging
             layout.lock.unlink(missing_ok=True)
 
 
-def recover(layout: Layout, transaction: Path, apply: bool) -> dict:
+def recover(layout: TransactionLayout, transaction: Path, apply: bool) -> dict:
     """以系统文件锁串行化恢复，进程异常退出后锁自动释放，不新增二次残留锁。"""
     if not layout.lock.exists() or layout.lock.is_symlink():
         return recover_locked(layout, transaction, apply)
@@ -208,7 +225,7 @@ def recover(layout: Layout, transaction: Path, apply: bool) -> dict:
         return recover_locked(layout, transaction, apply)
 
 
-def recover_locked(layout: Layout, transaction: Path, apply: bool) -> dict:
+def recover_locked(layout: TransactionLayout, transaction: Path, apply: bool) -> dict:
     """恢复只回滚未完成事务；活动进程与无法归属的锁不能自动删除。"""
     journal = read_journal(layout, transaction)
     if journal["status"] not in ("applying", "complete", "rolled_back"):

@@ -48,7 +48,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 - `deviations` 写已确认的项目差异和原规范位置，保留具体有效约定。无需差异时为空列表。
 - `commit_policy` 为 `local`（通过验证后按范围本地提交）或 `manual`（明确要求时才提交）；生成器本身不执行 Git 暂存、提交或推送。
 
-初始化会将配置保存为 `.ai-dev-standards/project.json`。这是一份采用记录；后续改动它需要显式升级或人工合并，当前命令不会按新配置自动覆盖已有结果。
+初始化会将配置保存为 `.ai-dev-standards/project.json`。后续调整时，在仓库外准备新配置，再使用下文的升级命令。
 
 ## 预览与生成
 
@@ -103,6 +103,26 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 写入过程先在目标项目中的临时目录准备完整文件，再发布规范目录，最后原子替换 AGENTS。可捕获的入口写入失败会撤销本次规范目录并保留原入口；多文件操作无法保证掉电或强制杀进程时整体原子。
 
 遇到异常退出残留时，先确认无运行中的初始化进程，检查 `.ai-dev-standards.lock`、`.ai-dev-standards-stage-*` 及目标目录。保留副本并比较原有 Git 状态；如果结果已完整，确认后清理锁和临时目录再验证；不完整时只撤销可确认由该次初始化产生且未被后续修改的文件，再重跑。不能直接删除用户目录或清单来绕过冲突；无法确认归属时人工合并。
+
+## 升级已接入项目的规范
+
+在要采用的工具包版本下，从工具包根目录预览差异，再应用。已安装的短命令和发行包也支持同一组参数。
+
+```bash
+./scripts/ai-dev-standards upgrade-rules --project ../my-project
+./scripts/ai-dev-standards upgrade-rules --project ../my-project --apply
+```
+
+升级后，项目登记了检查命令时可执行 `./scripts/ai-dev-standards verify --project ../my-project`。默认沿用项目已登记的技术栈、目录范围、检查命令、项目差异和提交策略。要更改采用配置，先把项目的 `.ai-dev-standards/project.json` 复制到仓库外，修改后在预览和应用命令上都加 `--config ../project-config.json`。升级会保留 `AGENTS.md` 区块外内容和清单外的项目文件。若受管文件或区块已手改，先保存并整理差异。需要长期保留的内容可写入自有规则或新配置的 `deviations`，再以旧版受管内容为基线执行升级。
+
+升级完成时会输出备份目录。独立 Git 仓库的备份位于其 Git 元数据目录，无独立 Git 目录时位于项目根目录的 `.ai-dev-standards-upgrade-backups/`。备份属于本机操作记录。遇到中断时，确认记录中的进程已经退出，再使用对应的事务目录预览和恢复：
+
+```bash
+./scripts/ai-dev-standards upgrade-rules --project ../my-project --recover "$transaction_dir"
+./scripts/ai-dev-standards upgrade-rules --project ../my-project --recover "$transaction_dir" --apply
+```
+
+将 `transaction_dir` 设为该项目备份中的 `txn-*` 目录。若日志缺失或恢复发现后续改动，保留现场，按备份核对差异。已完成的升级可结合 Git 改动或备份手工回退。
 
 ## 验收
 
