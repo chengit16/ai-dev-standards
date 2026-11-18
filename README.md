@@ -66,6 +66,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 - [MIT 与 GitHub 发版指南](docs/github-release.md)：维护者构建、打标签、发布与校验的操作步骤。
 - [开发收尾](docs/finish-task.md)：M4 范围核对、检查、本地提交与独立推送。
 - [项目规划](docs/project-plan.md)：方案、范围、工作流、里程碑与验收标准。
+- [首发后的优化规划](docs/next-steps-plan.md)：发行包自动验收、免克隆安装体验和跨工具试点。
 - [项目维护约定](AGENTS.md)：维护本仓库时使用的规则。
 
 ## 目录职责
