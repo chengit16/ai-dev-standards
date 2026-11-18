@@ -1,7 +1,9 @@
 name: 构建并验收发行包
-run-name: 发行包验收 ${{ inputs.release_commit }}
+run-name: 发行包 ${{ inputs.release_commit || github.sha }}
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       release_commit:
@@ -17,25 +19,35 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # 自动发布顺序分配版本号，手动验收单独运行。
+  group: ${{ github.event_name == 'push' && 'main-release' || github.run_id }}
+  queue: max
+
 jobs:
   release-candidate:
+    if: github.event_name == 'workflow_dispatch' || !github.event.deleted
     runs-on: macos-15
     timeout-minutes: 20
+    outputs:
+      skip: ${{ steps.plan.outputs.skip }}
+      previous_version: ${{ steps.plan.outputs.previous_version }}
     defaults:
       run:
         shell: bash
     env:
       PYTHONDONTWRITEBYTECODE: '1'
-      RELEASE_COMMIT: ${{ inputs.release_commit }}
-      PREVIOUS_VERSION: ${{ inputs.previous_version }}
+      RELEASE_COMMIT: ${{ inputs.release_commit || github.sha }}
     steps:
       - name: 检查输入
+        env:
+          PREVIOUS_VERSION: ${{ inputs.previous_version }}
         run: |
           if [[ ! "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]]; then
             echo '::error::release_commit 必须是完整的 40 位 Git SHA，请使用 git rev-parse 获取。'
             exit 1
           fi
-          if [[ ! "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && ! "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo '::error::previous_version 应为已公开的正式版本标签，例如 v0.1.0。'
             exit 1
           fi
@@ -43,7 +55,7 @@ jobs:
       - name: 检出候选提交
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ inputs.release_commit }}
+          ref: ${{ env.RELEASE_COMMIT }}
           # 升级基线的提交从标签解析，获取完整历史及标签。
           fetch-depth: 0
           persist-credentials: false
@@ -53,20 +65,38 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: 确定升级基线
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_VERSION: ${{ inputs.previous_version }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            python3 .github/scripts/publish_release.py plan "$RELEASE_COMMIT"
+          else
+            echo "previous_version=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 验证检出版本并运行测试
+        if: steps.plan.outputs.skip != 'true'
         run: |
           if [[ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT" ]]; then
             echo '::error::检出提交与指定的候选提交不一致。'
             exit 1
           fi
           python3 -m unittest discover -s tests -v
+          python3 -m unittest discover -s .github/scripts -v
 
       - name: 构建候选发行包
+        if: steps.plan.outputs.skip != 'true'
         run: |
           ./scripts/ai-dev-standards release --ref "$RELEASE_COMMIT" \
             --output "$RUNNER_TEMP/release-candidate"
 
       - name: 下载上一公开版本的附件
+        if: steps.plan.outputs.skip != 'true'
+        env:
+          PREVIOUS_VERSION: ${{ steps.plan.outputs.previous_version }}
         run: |
           previous_commit=$(git rev-parse --verify "refs/tags/${PREVIOUS_VERSION}^{commit}")
           if [[ "$previous_commit" == "$RELEASE_COMMIT" ]]; then
@@ -85,6 +115,7 @@ jobs:
           done
 
       - name: 校验发行包并演练安装、升级和卸载
+        if: steps.plan.outputs.skip != 'true'
         run: |
           python3 .github/scripts/verify_release.py \
             "$RELEASE_COMMIT" "$RUNNER_TEMP/release-candidate" \
@@ -92,10 +123,46 @@ jobs:
             tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: 上传已验收的发行包与校验文件
+        if: steps.plan.outputs.skip != 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: ai-dev-standards-${{ inputs.release_commit }}
+          name: ai-dev-standards-${{ env.RELEASE_COMMIT }}
           path: |
             ${{ runner.temp }}/release-candidate/ai-dev-standards-*.pyz
             ${{ runner.temp }}/release-candidate/ai-dev-standards-*.sha256
           if-no-files-found: error
+          overwrite: true
+
+  publish:
+    name: 发布到 GitHub Releases
+    needs: release-candidate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release-candidate.outputs.skip != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: 检出已验收提交
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 获取同次运行的已验收附件
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ai-dev-standards-${{ github.sha }}
+          path: ${{ runner.temp }}/release-candidate
+
+      - name: 核对草稿附件并公开发布
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_VERSION: ${{ needs.release-candidate.outputs.previous_version }}
+        run: |
+          python3 .github/scripts/publish_release.py publish "$GITHUB_SHA" \
+            --base "$PREVIOUS_VERSION" --folder "$RUNNER_TEMP/release-candidate" |
+            tee -a "$GITHUB_STEP_SUMMARY"

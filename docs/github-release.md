@@ -9,9 +9,21 @@
 | GitHub Release | 为标签提供面向使用者的发布说明、下载附件和源码归档。 |
 | `.pyz` 与 `.sha256` | 可用 Python 执行的工具包，以及验证该文件内容的 SHA-256 校验文件。 |
 
-## 以后发版怎么走
+## 推送 main 后自动发布
 
-先把要交付的改动测试并提交到 `main`，再按下面六步发布。工作流假定你有目标仓库的写权限，并在同一个终端里运行命令，方便复用版本号、提交号和产物路径。
+每次推送更新 `main` 后，GitHub Actions 会以本次推送的最新提交运行一次。推送前按第 1 节核对公开范围，文档提交也会触发。一次推送包含多条提交时，发行包对应本次推送最后的提交。
+
+1. 在 [Actions「构建并验收发行包」](https://github.com/chengit16/ai-dev-standards/actions/workflows/release-candidate.yml) 打开由 `push` 触发的运行。`release-candidate` 作业运行测试、构建 `.pyz` 和 `.sha256`，并演练全新安装、从上一正式版本升级和卸载。
+2. 验收成功后，**发布到 GitHub Releases** 作业根据最新正式版本递增补丁号，例如 `v0.1.0` 后发布 `v0.1.1`。同一版本序列中已有标签或草稿的编号会被保留。发布作业复验附件，上传到草稿，确认附件哈希后为该提交打标签并公开发布。
+3. 在运行的 **Summary** 打开发布链接，检查版本、来源提交和两个附件。使用者在 [Releases](https://github.com/chengit16/ai-dev-standards/releases) 下载正式发行包。
+
+自动发布按 GitHub 的运行队列依次执行。同一提交已发布，或更晚的正式版本已经包含该提交时，重跑会跳过发布。验收失败时，先查看失败步骤。发布中途失败可在原运行重跑，工作流会复用同一提交建立的草稿，并补传缺失附件。若升级基线变动，重新运行全部作业。已存在的附件内容不一致或标签已被其他提交占用时，先核对草稿、附件或标签，再重跑。[GitHub Actions 排队机制](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
+
+只想构建并验收时，使用 [手动验收入口](#在-github-actions-构建和验收)。需要人工指定版本、手写发布说明或暂停自动发布时，可在仓库 Actions 暂停该工作流并按下文在本地构建和手动发版，之后重新启用。
+
+## 手动发版怎么走
+
+先把要交付的改动测试并提交到 `main`，再按下面六步发布。操作需要目标仓库的写权限。在同一个终端运行命令可复用版本号、提交号和产物路径。
 
 | 从 `v0.1.0` 开始 | 版本号示例 |
 | --- | --- |
@@ -72,7 +84,7 @@ release_stem="ai-dev-standards-$(printf '%s' "$release_commit" | cut -c1-12)"
 
 ### 在 GitHub Actions 构建和验收
 
-首次使用时，先将工作流合入 GitHub 默认分支 `main`。按前两节确认公开范围和提交后，将候选提交推送到 GitHub，以便 Actions 检出。候选提交应包含发行包验收脚本。工作流由维护者手动运行，使用仓库只读权限。正式发版仍按第 4 至 6 节操作。[GitHub 手动运行工作流](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
+候选提交需已在 GitHub 上可检出，并包含发行包验收脚本。选择 **Run workflow** 启动的验收只有仓库读取权限，可用于查看日志和下载候选附件。需要手动发布时，再按第 4 至 6 节操作。[GitHub 手动运行工作流](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 
 1. 在仓库的 **Actions** 选 **构建并验收发行包**，点击 **Run workflow**，工作流所在分支选 `main`。填写 `release_commit` 为第 2 节取得的完整提交号，`previous_version` 为上一公开正式版本标签，例如 `v0.1.0`。
 2. 等待工作流成功，检查运行摘要中的候选提交、上一版、校验和安装演练。工作流在隔离目录进行全新安装、从上一版升级、诊断和卸载，并验证用户配置保留。宿主读取规则和 Skills 仍需按安装说明在实际会话验收。[安装与本机验收](installation.md)
