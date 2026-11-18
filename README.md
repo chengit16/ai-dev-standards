@@ -63,6 +63,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 - [创建工程与验证](docs/project-scaffold.md)：M5 模板创建、检查及免克隆发行包用法。
 - [M5 验证记录](docs/verification/m5-scaffold.md)：三种模板、发行包和收尾工作流的实际结果。
 - [首发范围](docs/release-scope.md)：许可证、公开内容与分发方式。
+- [MIT 与 GitHub 发版指南](docs/github-release.md)：维护者构建、打标签、发布与校验的操作步骤。
 - [开发收尾](docs/finish-task.md)：M4 范围核对、检查、本地提交与独立推送。
 - [项目规划](docs/project-plan.md)：方案、范围、工作流、里程碑与验收标准。
 - [项目维护约定](AGENTS.md)：维护本仓库时使用的规则。
