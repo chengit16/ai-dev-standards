@@ -1,0 +1,21 @@
+# {{project}}
+
+此工程由 `{{template}}` 模板生成。项目采用的规范和检查清单见 [.ai-dev-standards/PROJECT.md](.ai-dev-standards/PROJECT.md)。
+
+## 本地启动
+
+需要 Node.js 24.19、pnpm 11.20.0 和 Python 3.11+（用于工具包和冒烟检查）。FastAPI 组合另外需要 Python 3.12 和 uv。
+
+```bash
+cd apps/web
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+前端默认运行在 http://127.0.0.1:5173。
+
+{{api_instructions}}
+
+## 验证
+
+按采用说明运行真实检查，或从工程根目录执行 `ai-dev-standards verify --project .`。{{smoke_instructions}}

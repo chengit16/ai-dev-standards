@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "components": {
+    "shared": {
+      "destination": ".",
+      "files": [
+        ".gitignore",
+        "README.md.in",
+        "scripts/smoke.py"
+      ]
+    },
+    "react-vite": {
+      "destination": "apps/web",
+      "files": [
+        ".prettierignore",
+        "eslint.config.mjs",
+        "index.html",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "src/Workbench.test.tsx",
+        "src/Workbench.tsx",
+        "src/api/client.ts",
+        "src/api/services/health.ts",
+        "src/main.tsx",
+        "src/routes.tsx",
+        "src/store/usePreferencesStore.ts",
+        "src/styles.css",
+        "tsconfig.json",
+        "uno.config.ts",
+        "vite.config.ts",
+        "starter.json"
+      ],
+      "checks": [
+        [
+          "pnpm",
+          "format:check"
+        ],
+        [
+          "pnpm",
+          "lint"
+        ],
+        [
+          "pnpm",
+          "typecheck"
+        ],
+        [
+          "pnpm",
+          "test"
+        ],
+        [
+          "pnpm",
+          "build"
+        ]
+      ],
+      "install": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ]
+    },
+    "fastapi": {
+      "destination": "apps/api",
+      "files": [
+        ".env.example",
+        ".python-version",
+        "app.py",
+        "pyproject.toml",
+        "tests/test_health.py",
+        "uv.lock"
+      ],
+      "checks": [
+        [
+          "uv",
+          "run",
+          "--no-sync",
+          "ruff",
+          "check",
+          "."
+        ],
+        [
+          "uv",
+          "run",
+          "--no-sync",
+          "ruff",
+          "format",
+          "--check",
+          "."
+        ],
+        [
+          "uv",
+          "run",
+          "--no-sync",
+          "mypy",
+          "app.py"
+        ],
+        [
+          "uv",
+          "run",
+          "--no-sync",
+          "pytest",
+          "-q"
+        ]
+      ],
+      "install": [
+        "uv",
+        "sync",
+        "--locked"
+      ]
+    },
+    "nestjs-fastify": {
+      "destination": "apps/api",
+      "files": [
+        ".env.example",
+        ".prettierignore",
+        "eslint.config.mjs",
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "src/app.ts",
+        "src/main.ts",
+        "tests/health.test.ts",
+        "tsconfig.json"
+      ],
+      "checks": [
+        [
+          "pnpm",
+          "format:check"
+        ],
+        [
+          "pnpm",
+          "lint"
+        ],
+        [
+          "pnpm",
+          "typecheck"
+        ],
+        [
+          "pnpm",
+          "test"
+        ],
+        [
+          "pnpm",
+          "build"
+        ]
+      ],
+      "install": [
+        "pnpm",
+        "install",
+        "--frozen-lockfile"
+      ]
+    }
+  },
+  "templates": {
+    "react-vite": {
+      "backend": null
+    },
+    "react-fastapi": {
+      "backend": "fastapi"
+    },
+    "react-nestjs": {
+      "backend": "nestjs-fastify"
+    }
+  }
+}

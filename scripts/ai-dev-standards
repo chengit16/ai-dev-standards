@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""统一工程创建、规范接入、验证、开发收尾与安装命令。"""
+
+from __future__ import annotations
+
+import sys
+
+# 运行安装副本时不生成清单外的字节码。
+sys.dont_write_bytecode = True
+
+from scaffold.cli import main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

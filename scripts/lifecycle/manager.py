@@ -210,7 +210,8 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
             target = stage / "root/bundle" / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
-            target.chmod(0o644)
+            # 命令随整个安装目录受管，无需写入用户现有 PATH 目录。
+            target.chmod(0o755 if name == "scripts/ai-dev-standards" else 0o644)
         manifest = {
             "owner": OWNER,
             "schema_version": 1,

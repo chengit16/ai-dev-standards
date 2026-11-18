@@ -46,7 +46,15 @@ class ToolkitTests(unittest.TestCase):
             shutil.copytree(
                 ROOT / area,
                 self.source / area,
-                ignore=shutil.ignore_patterns("__pycache__", ".ruff_cache"),
+                ignore=shutil.ignore_patterns(
+                    "__pycache__",
+                    ".ruff_cache",
+                    "node_modules",
+                    "dist",
+                    ".venv",
+                    ".mypy_cache",
+                    ".pytest_cache",
+                ),
             )
         self.layout = Layout.create(self.home)
         self.agents = self.layout.codex / "AGENTS.md"

@@ -1,0 +1,32 @@
+{
+  "name": "starter-api",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24.19 <25"
+  },
+  "scripts": {
+    "dev": "pnpm build && node --env-file-if-exists=.env dist/src/main.js",
+    "start": "node --env-file-if-exists=.env dist/src/main.js",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "pnpm build && node --test dist/tests/health.test.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.1.27",
+    "@nestjs/core": "11.1.27",
+    "@nestjs/platform-fastify": "11.1.27",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.2",
+    "eslint": "10.15.0",
+    "prettier": "3.10.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.73.0"
+  }
+}

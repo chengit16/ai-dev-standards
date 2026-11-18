@@ -10,6 +10,7 @@ from pathlib import Path
 # 安装副本的源码哈希必须稳定，运行 CLI 不应产生未登记的字节码缓存。
 sys.dont_write_bytecode = True
 
+from bootstrap.model import BootstrapError
 from lifecycle.manager import doctor, manage
 from lifecycle.model import InstallError, Layout
 from lifecycle.transaction import recover
@@ -43,7 +44,15 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 1 if result.get("problems") else 0
-    except (InstallError, OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+    except (
+        BootstrapError,
+        InstallError,
+        OSError,
+        ValueError,
+        KeyError,
+        TypeError,
+        AttributeError,
+    ) as error:
         print(f"生命周期操作停止：{error}", file=sys.stderr)
         return 1
 

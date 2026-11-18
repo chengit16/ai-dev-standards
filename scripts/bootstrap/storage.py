@@ -38,7 +38,7 @@ def check_tree(root: Path) -> None:
                 raise BootstrapError("受管目录包含符号链接，不能自动处理")
 
 
-def source_version(toolkit: Path, content_id: str) -> dict:
+def source_version(toolkit: Path, content_id: str, *, paths: list[str] | None = None) -> dict:
     """记录 Git 提交及快照指纹，支持未发布工作树而不伪称固定发行版。"""
 
     def git(*args: str) -> str | None:
@@ -88,10 +88,16 @@ def source_version(toolkit: Path, content_id: str) -> dict:
         "status",
         "--porcelain",
         "--",
-        "standards",
-        "templates/project-bootstrap",
-        "scripts/bootstrap",
-        "scripts/project_bootstrap.py",
+        *(
+            paths
+            if paths is not None
+            else [
+                "standards",
+                "templates/project-bootstrap",
+                "scripts/bootstrap",
+                "scripts/project_bootstrap.py",
+            ]
+        ),
     )
     return {
         "repository": OWNER,

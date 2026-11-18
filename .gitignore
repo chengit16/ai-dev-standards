@@ -15,3 +15,10 @@ local/
 __pycache__/
 *.py[cod]
 .ruff_cache/
+
+# 空白模板本地演练产物由锁文件重新生成。
+/templates/projects/**/node_modules/
+/templates/projects/**/dist/
+/templates/projects/**/.venv/
+/templates/projects/**/.pytest_cache/
+/templates/projects/**/.mypy_cache/

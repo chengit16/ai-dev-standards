@@ -147,6 +147,16 @@ def bundle(source: Path) -> tuple[dict[str, bytes], dict]:
         if data is None:
             raise InstallError(f"工具包缺少 {name}")
         files[name] = data
+    # M5 模板按精确清单打包，保留点文件、锁文件和各类源码。
+    manifest = source / "templates/projects/catalog.json"
+    if manifest.exists():
+        from scaffold.catalog import COMMAND, catalog_files
+
+        files.update(catalog_files(source))
+        command = regular(source / COMMAND)
+        if command is None:
+            raise InstallError("工具包缺少统一命令入口")
+        files[COMMAND] = command
     for area in (
         "rules",
         "standards",
@@ -161,7 +171,12 @@ def bundle(source: Path) -> tuple[dict[str, bytes], dict]:
         if root.is_symlink() or not root.is_dir():
             raise InstallError(f"工具包目录无效：{area}")
         for folder, dirs, names in os.walk(root):
-            dirs[:] = [x for x in dirs if x not in ("__pycache__", ".ruff_cache")]
+            dirs[:] = [
+                x
+                for x in dirs
+                if x not in ("__pycache__", ".ruff_cache")
+                and (Path(folder) / x) != source / "templates/projects"
+            ]
             for name in dirs + names:
                 if (Path(folder) / name).is_symlink():
                     raise InstallError("发布资源不能包含符号链接")
@@ -192,6 +207,17 @@ def bundle(source: Path) -> tuple[dict[str, bytes], dict]:
         "working_tree_dirty": bool(git("status", "--porcelain")) if own else None,
         "content_sha256": digest(encoded(hashes)),
     }
+    if not own and (source / STAMP).is_file():
+        # 发行包展开后没有 Git 元数据，沿用已经校验的固定提交与来源。
+        stamp = json.loads(regular(source / STAMP))
+        if (
+            stamp.get("owner") != OWNER
+            or stamp.get("schema_version") != 1
+            or stamp.get("files") != hashes
+            or stamp.get("source", {}).get("content_sha256") != version["content_sha256"]
+        ):
+            raise InstallError("发行包资源与来源清单不一致")
+        version = stamp["source"]
     # 安装副本无 .git；把完整来源快照随包保存，供项目初始化继续追溯。
     files[STAMP] = encoded(
         {"owner": OWNER, "schema_version": 1, "source": version, "files": hashes}

@@ -1,0 +1,78 @@
+:root {
+  color: #172821;
+  background: #f5f3eb;
+  font:
+    16px/1.55 "Atkinson Hyperlegible Next",
+    "PingFang SC",
+    sans-serif;
+}
+body {
+  margin: 0;
+}
+.shell {
+  box-sizing: border-box;
+  max-width: 65rem;
+  margin: auto;
+  padding: 1.5rem clamp(1.2rem, 5vw, 4rem);
+}
+header {
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid #b6c0b7;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-weight: 700;
+}
+.brand span {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  background: #005b4b;
+  transform: rotate(-12deg);
+}
+.overview {
+  padding: clamp(2rem, 8vw, 5rem) 0 2.5rem;
+}
+.overview p {
+  color: #42584c;
+  margin: 0;
+}
+h1 {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  margin: 0 0 0.35rem;
+  line-height: 1.18;
+  letter-spacing: -0.055em;
+}
+h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.panel {
+  border-top: 3px solid #005b4b;
+  background: #fffdf5;
+  padding: clamp(1.2rem, 4vw, 2rem);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.hint {
+  color: #42584c;
+  margin: 0.3rem 0 0;
+}
+.status {
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+}
+.status[data-state="ready"] {
+  color: #005b4b;
+}
+.status[data-state="failed"] {
+  color: #9a351d;
+}
+@media (width < 38rem) {
+  .panel {
+    grid-template-columns: 1fr;
+  }
+}
