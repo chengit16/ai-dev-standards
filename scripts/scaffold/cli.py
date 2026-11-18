@@ -10,7 +10,7 @@ from pathlib import Path
 
 from bootstrap.model import BootstrapError
 from bootstrap.upgrade import recover_upgrade, upgrade
-from lifecycle.model import InstallError
+from lifecycle.model import InstallError, bundle
 
 from .project import create, run_steps, verify
 from .release import build
@@ -34,7 +34,8 @@ def main(argv: list[str] | None = None) -> int:
             [sys.executable, str(toolkit / "scripts" / DELEGATES[action]), *forwarded]
         )
     parser = argparse.ArgumentParser(description=__doc__)
-    sub = parser.add_subparsers(dest="action", required=True)
+    parser.add_argument("--version", action="store_true", help="查看当前工具包和来源提交")
+    sub = parser.add_subparsers(dest="action")
     make = sub.add_parser("create", help="预览或创建空白工程并接入规范")
     make.add_argument("project", type=Path)
     make.add_argument("--template", choices=TEMPLATES, required=True)
@@ -59,9 +60,21 @@ def main(argv: list[str] | None = None) -> int:
     for entry in (make, check):
         entry.add_argument("--timeout", type=int, default=300, help="单项命令最长运行秒数")
     options = parser.parse_args(args)
+    if options.version and options.action is not None:
+        parser.error("查询当前版本时单独使用 --version；安装或更新时将它放在子命令后")
+    if not options.version and options.action is None:
+        parser.error("请指定子命令或使用 --version 查询当前版本")
     if getattr(options, "timeout", 1) <= 0:
         parser.error("--timeout 必须大于零")
     try:
+        if options.version:
+            _, source = bundle(toolkit)
+            tag = source.get("release_version") or "未记录发布标签"
+            commit = source.get("git_commit")
+            identity = f"Git {commit}" if commit else f"内容 SHA-256 {source['content_sha256']}"
+            dirty = "，工作区有未提交改动" if source.get("working_tree_dirty") else ""
+            print(f"ai-dev-standards {tag}（{identity}{dirty}）")
+            return 0
         if options.action == "release":
             package, checksum = build(toolkit, options.ref, options.output)
             print(f"发行包：{package}\n校验文件：{checksum}")

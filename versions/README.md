@@ -8,4 +8,4 @@ M3 生成的 `manifest.json` 使用 `schema_version: 1`，记录工具包 Git �
 
 M4 的任务请求使用 `schema_version: 1`，沿用 M3 项目的 checks 与 commit_policy。恢复记录属于本机 Git 目录状态，不随业务代码分发；M2 会检测旧提交 Skill，并要求明确保留选择，不自动改写旧文件。
 
-M2 安装清单与事务日志使用 `schema_version: 1`，分别记录资源归属、来源内容指纹与前后快照。安装副本通过 `_toolkit-source.json` 保留来源；更新只接收显式选定的本地来源，不隐式拉取远程，也不升级业务项目规范。部署工作树快照需按实际状态标识。
+M2 安装清单与事务日志使用 `schema_version: 1`，分别记录资源归属、来源内容指纹与前后快照。安装副本通过 `_toolkit-source.json` 保留来源。通过 GitHub 标签下载并校验的副本还会记录 `release_version`，旧清单可以缺少该字段。更新使用选定的本地来源或 `--version` 指定的正式发行版。业务项目规则通过 `upgrade-rules` 更新，部署工作树快照需按实际状态标识。

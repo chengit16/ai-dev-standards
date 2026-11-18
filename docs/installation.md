@@ -4,6 +4,38 @@ M2 提供 `scripts/toolkit.py`。当前完成 macOS 隔离验证，使用 Python
 
 M5 提供统一入口 `./scripts/ai-dev-standards`。本页的安装命令启用用户级规则和 Skills，适合希望在多个 Codex 项目中使用的情况。已有项目可以单独[接入项目规则](project-bootstrap.md)，新项目可以[从模板创建工程](project-scaffold.md)，两种项目操作都可直接从完整工具包或发行包执行。[发行包获取与校验](project-scaffold.md#使用固定版本的发行文件)
 
+## 按版本安装和升级
+
+新电脑可以下载独立安装脚本，无需克隆仓库。先在 GitHub 选定一个已公开的正式版本。下面使用 `v0.1.1` 演示，如需安装其他版本，请修改 `release_version`。[GitHub Releases](https://github.com/chengit16/ai-dev-standards/releases)
+
+```bash
+release_version=v0.1.1
+curl -fsSL https://raw.githubusercontent.com/chengit16/ai-dev-standards/main/scripts/install_release.py -o install_release.py &&
+  python3 install_release.py install --version "$release_version"
+```
+
+脚本自动下载同一发行版的 `.pyz` 和 `.sha256`，核对 SHA-256、Git 标签与包内提交，再显示目标目录、版本和拟变更文件。确认后使用同一版本应用并诊断：
+
+```bash
+python3 install_release.py install --version "$release_version" --apply
+toolkit="${CODEX_HOME:-$HOME/.codex}/ai-dev-standards/bundle/scripts/ai-dev-standards"
+"$toolkit" doctor
+```
+
+检测到旧 `git-commit-message` Skill 时，如需保留，在两次安装命令都加 `--legacy-policy keep`。若只想先体验，创建 `trial_home=$(mktemp -d)`，在安装、更新和诊断命令中都加 `--home "$trial_home"`，并将上例的 `toolkit` 设为 `"$trial_home/.codex/ai-dev-standards/bundle/scripts/ai-dev-standards"`。
+
+已有安装时，先将 `release_version` 改为目标正式版本，再把 `install` 换成 `update`：
+
+```bash
+python3 install_release.py update --version "$release_version"
+python3 install_release.py update --version "$release_version" --apply
+"$toolkit" doctor
+```
+
+从包含新入口的版本开始，可以直接使用 `"$toolkit" update --version "$release_version"` 预览，确认后追加 `--apply`。`"$toolkit" --version` 查询当前工具包，按版本安装的副本显示发布标签和来源提交。直接使用源码或离线包时，查询显示已有的来源信息。`doctor` 也会在 `source.release_version` 显示已记录的标签。
+
+版本未发布、网络失败、附件缺失或校验不符时，命令在写入用户目录前停止。发生写入中断时按[恢复步骤](#失败和中断恢复)处理。离线时可继续使用完整源码或已经校验的 `.pyz` 执行 `install`、`update` 和 `doctor`。[离线发行包用法](project-scaffold.md#使用固定版本的发行文件)
+
 ## 本机首次验收
 
 在完整工具包仓库根目录运行：
@@ -78,11 +110,11 @@ python3 scripts/toolkit.py update --apply
 python3 scripts/toolkit.py doctor
 ```
 
-更新不联网、不自动 pull、不创建标签。预览列出变化资源及文件；实际执行前备份旧版完整资源和全局入口，发布后核对哈希。相同内容重复运行不改写文件或创建新备份；已安装且来源不同时，install 会要求使用 update。
+使用本地源码或已下载发行包时，省略 `--version` 即可离线更新。预览列出变化资源及文件，实际执行前备份旧版完整资源和全局入口，写入后核对哈希。相同内容重复运行不改写文件或创建新备份。已安装且来源不同时，`install` 会要求使用 `update`。
 
 全局区块之外的追加与修改按当前内容保留，不恢复历史整份 AGENTS 覆盖用户后续编辑。受管副本、受管区块或链接被修改、缺失，或目录中新添了文件和空目录时会停止，保留现场供比较。当前不提供强制覆盖或自动合并用户对受管资源的修改。
 
-安装清单记录 Git 提交和来源内容集合 SHA-256；未提交来源标记为工作树快照，不能当作发行版。无 Git 元数据的来源使用内容指纹并保留 Git 字段为空。安装副本中的 `_toolkit-source.json` 使 M3 初始化结果继续记录来源提交和安装指纹；文件被手工改动时不能伪称干净版本。旧版安装可以直接更新并新增提取 Skill 链接。若发现用户已有同名入口，更新会报告冲突。业务项目使用独立的[规范升级命令](project-bootstrap.md#升级已接入项目的规范)。
+安装清单记录 Git 提交和来源内容集合 SHA-256，按版本下载并验证 GitHub 标签后还会记录 `release_version`。未提交来源标记为工作树快照。无 Git 和来源清单的副本使用内容指纹，Git 字段为空。安装副本中的 `_toolkit-source.json` 使项目初始化继续记录来源提交和安装指纹。旧版安装可以直接更新并补充提取 Skill 链接，遇到用户已有同名入口会报告冲突。业务项目使用独立的[规范升级命令](project-bootstrap.md#升级已接入项目的规范)。
 
 ## 卸载
 

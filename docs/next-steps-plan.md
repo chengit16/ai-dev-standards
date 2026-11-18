@@ -1,6 +1,6 @@
 # 首发后的优化规划
 
-`v0.1.0` 已通过 GitHub Release 发布，可下载固定版本的 `.pyz` 和 `.sha256`，无需克隆源码。第一阶段的手动验收已在 GitHub 运行通过，后续增加的 `main` 自动发布待首次远端验收。后两阶段按顺序实施、各自验收，再按实际改动安排版本。[首次托管验收](https://github.com/chengit16/ai-dev-standards/actions/runs/44258864424) · [发版指南](github-release.md) · [发行包用法](project-scaffold.md#使用固定版本的发行文件)
+`v0.1.0` 已通过 GitHub Release 发布。第一阶段的手动验收和 `main` 自动发布均已在 GitHub 跑通，自动发布版本为 `v0.1.1`。第二阶段的固定版本安装和升级入口已实现并在隔离目录验证。第三阶段的 Cursor 试点待实施。[首次自动发布](https://github.com/chengit16/ai-dev-standards/actions/runs/44263343638) · [发版指南](github-release.md) · [发行包用法](project-scaffold.md#使用固定版本的发行文件)
 
 | 顺序 | 交付内容 | 完成后可以怎么用 |
 | --- | --- | --- |
@@ -32,7 +32,7 @@
 3. 版本不存在、网络失败、附件缺失和校验不一致都有明确错误，受管配置在这些下载或校验失败时保持原状。
 4. 版本查询可区分不同发行包，升级后用已安装入口能查看实际来源版本。业务项目自行控制已采用的规则版本，项目规则通过 `upgrade-rules` 单独预览和升级。
 
-完成后，在安装说明补齐新装、升级、离线使用和排查示例。[安装与本机验收](installation.md) · [升级项目规则](project-bootstrap.md#升级已接入项目的规范)
+安装说明已包含新装、升级、离线使用和排查示例。[按版本安装和升级](installation.md#按版本安装和升级) · [升级项目规则](project-bootstrap.md#升级已接入项目的规范)
 
 ## 第三阶段　用真实项目验证 Cursor
 

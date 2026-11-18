@@ -1,4 +1,4 @@
-"""工具包安装、诊断、更新、卸载与恢复；默认预览，不联网更新来源。"""
+"""工具包安装、诊断、更新、卸载与恢复，写操作默认预览。"""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 from bootstrap.model import BootstrapError
+from install_release import add_target_options, run_release
 from lifecycle.manager import doctor, manage
 from lifecycle.model import InstallError, Layout
 from lifecycle.transaction import recover
@@ -19,13 +20,15 @@ from lifecycle.transaction import recover
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("install", "update", "doctor", "uninstall", "recover"))
-    parser.add_argument("--home", type=Path, help="隔离验收的用户目录；指定后不继承 CODEX_HOME")
-    parser.add_argument("--codex-home", type=Path, help="显式 Codex 配置目录")
-    parser.add_argument("--apply", action="store_true", help="实际写入；默认只预览")
-    parser.add_argument("--legacy-policy", choices=("stop", "keep"), help="明确保留旧提交 Skill")
+    add_target_options(parser)
+    parser.add_argument("--version", help="install 或 update 使用指定 GitHub 正式发行版本")
     parser.add_argument("--transaction", type=Path, help="doctor 输出的未完成事务目录")
     args = parser.parse_args(argv)
     try:
+        if args.version is not None:
+            if args.action not in ("install", "update"):
+                parser.error("只有 install 和 update 可指定发行版本")
+            return run_release(args.action, args.version, args)
         layout = Layout.create(args.home, args.codex_home)
         if args.action == "doctor":
             result = doctor(layout)

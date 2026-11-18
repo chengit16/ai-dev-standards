@@ -73,7 +73,7 @@ python3 "$release_file.pyz" bootstrap --project ../my-project --config ../projec
 python3 "$release_file.pyz" create ../my-app --template react-fastapi --apply --install --verify
 ```
 
-需要安装 Codex 规则和 Skills 时，使用同一发行包按[安装说明](installation.md)依次预览、应用与诊断：
+需要安装 Codex 规则和 Skills 时，可以[按版本自动下载并校验](installation.md#按版本安装和升级)，也可以使用已经校验的本地发行包依次预览、应用与诊断：
 
 ```bash
 python3 "$release_file.pyz" install --legacy-policy keep
