@@ -63,19 +63,39 @@ git log --oneline "$previous_version..$release_commit"
 
 ## 3. 从固定提交构建并校验发行包
 
-用 Git 提交号固定构建来源，随后复用该提交号打标签。采用独立输出目录，便于选中同一次构建的两个附件：
+用 Git 提交号固定构建来源，随后复用该提交号打标签。以下两种方式都将附件放在同一个独立目录，后面的发布与复核步骤可直接复用。
 
 ```bash
 release_dir="$PWD/local/releases/$release_version"
 release_stem="ai-dev-standards-$(printf '%s' "$release_commit" | cut -c1-12)"
+```
+
+### 在 GitHub Actions 构建和验收
+
+首次使用时，先将工作流合入 GitHub 默认分支 `main`。按前两节确认公开范围和提交后，将候选提交推送到 GitHub，以便 Actions 检出。候选提交应包含发行包验收脚本。工作流由维护者手动运行，使用仓库只读权限。正式发版仍按第 4 至 6 节操作。[GitHub 手动运行工作流](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
+
+1. 在仓库的 **Actions** 选 **构建并验收发行包**，点击 **Run workflow**，工作流所在分支选 `main`。填写 `release_commit` 为第 2 节取得的完整提交号，`previous_version` 为上一公开正式版本标签，例如 `v0.1.0`。
+2. 等待工作流成功，检查运行摘要中的候选提交、上一版、校验和安装演练。工作流在隔离目录进行全新安装、从上一版升级、诊断和卸载，并验证用户配置保留。宿主读取规则和 Skills 仍需按安装说明在实际会话验收。[安装与本机验收](installation.md)
+3. 在运行详情的 **Artifacts** 下载 `ai-dev-standards-<完整提交号>`，将其中的 `.pyz` 和 `.sha256` 一起解压到 `release_dir`。复核校验和、许可和来源提交后，按第 4 节为同一提交打标签。任一步验收失败时，在对应步骤日志查看原因，再用修复后或原有的候选提交重新运行。[GitHub 下载工作流附件](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts)
+
+### 在本地构建
+
+采用本地构建时，从仓库根目录运行：
+
+```bash
 ./scripts/ai-dev-standards release --ref "$release_commit" --output "$release_dir" &&
   (cd "$release_dir" && shasum -a 256 -c "$release_stem.sha256") &&
   python3 "$release_dir/$release_stem.pyz" --help
 ```
 
-构建从提交快照读取文件，工作区的未提交更改不会进入发行包。输出文件名使用提交号的前 12 位。校验通过时，`shasum` 显示 `.pyz: OK`。可用下面的命令确认包中许可证和来源清单：
+构建从提交快照读取文件，工作区的未提交更改不会进入发行包。输出文件名使用提交号的前 12 位。
+
+### 复核附件内容
+
+无论从 Actions 获取还是在本地构建，发布前均复核这对附件。校验通过时，`shasum` 显示 `.pyz: OK`。
 
 ```bash
+(cd "$release_dir" && shasum -a 256 -c "$release_stem.sha256")
 unzip -p "$release_dir/$release_stem.pyz" LICENSE
 unzip -p "$release_dir/$release_stem.pyz" _toolkit-source.json
 ```

@@ -1,0 +1,101 @@
+name: 构建并验收发行包
+run-name: 发行包验收 ${{ inputs.release_commit }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_commit:
+        description: 候选提交的完整 Git SHA
+        required: true
+        type: string
+      previous_version:
+        description: 用于升级验收的上一公开版本标签（例如 v0.1.0）
+        required: true
+        type: string
+        default: v0.1.0
+
+permissions:
+  contents: read
+
+jobs:
+  release-candidate:
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      RELEASE_COMMIT: ${{ inputs.release_commit }}
+      PREVIOUS_VERSION: ${{ inputs.previous_version }}
+    steps:
+      - name: 检查输入
+        run: |
+          if [[ ! "$RELEASE_COMMIT" =~ ^[a-f0-9]{40}$ ]]; then
+            echo '::error::release_commit 必须是完整的 40 位 Git SHA，请使用 git rev-parse 获取。'
+            exit 1
+          fi
+          if [[ ! "$PREVIOUS_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo '::error::previous_version 应为已公开的正式版本标签，例如 v0.1.0。'
+            exit 1
+          fi
+
+      - name: 检出候选提交
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.release_commit }}
+          # 升级基线的提交从标签解析，获取完整历史及标签。
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: 配置 Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+
+      - name: 验证检出版本并运行测试
+        run: |
+          if [[ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT" ]]; then
+            echo '::error::检出提交与指定的候选提交不一致。'
+            exit 1
+          fi
+          python3 -m unittest discover -s tests -v
+
+      - name: 构建候选发行包
+        run: |
+          ./scripts/ai-dev-standards release --ref "$RELEASE_COMMIT" \
+            --output "$RUNNER_TEMP/release-candidate"
+
+      - name: 下载上一公开版本的附件
+        run: |
+          previous_commit=$(git rev-parse --verify "refs/tags/${PREVIOUS_VERSION}^{commit}")
+          if [[ "$previous_commit" == "$RELEASE_COMMIT" ]]; then
+            echo '::error::升级验收应使用不同于候选提交的已发布版本。'
+            exit 1
+          fi
+          echo "PREVIOUS_COMMIT=$previous_commit" >> "$GITHUB_ENV"
+          previous_dir="$RUNNER_TEMP/release-previous"
+          mkdir -p "$previous_dir"
+          # 用已公开的附件演练升级，覆盖使用者真正拿到的发行包。
+          asset_base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$PREVIOUS_VERSION"
+          for extension in pyz sha256; do
+            filename="ai-dev-standards-${previous_commit:0:12}.$extension"
+            curl --fail --silent --show-error --location --retry 3 --max-time 60 \
+              "$asset_base/$filename" --output "$previous_dir/$filename"
+          done
+
+      - name: 校验发行包并演练安装、升级和卸载
+        run: |
+          python3 .github/scripts/verify_release.py \
+            "$RELEASE_COMMIT" "$RUNNER_TEMP/release-candidate" \
+            "$PREVIOUS_COMMIT" "$RUNNER_TEMP/release-previous" |
+            tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传已验收的发行包与校验文件
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: ai-dev-standards-${{ inputs.release_commit }}
+          path: |
+            ${{ runner.temp }}/release-candidate/ai-dev-standards-*.pyz
+            ${{ runner.temp }}/release-candidate/ai-dev-standards-*.sha256
+          if-no-files-found: error
