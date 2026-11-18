@@ -147,6 +147,11 @@ def bundle(source: Path) -> tuple[dict[str, bytes], dict]:
         if data is None:
             raise InstallError(f"工具包缺少 {name}")
         files[name] = data
+    # 正式发行和安装副本都要携带仓库授权声明；旧来源可继续更新。
+    for name in ("LICENSE", "NOTICE"):
+        data = regular(source / name)
+        if data is not None:
+            files[name] = data
     # M5 模板按精确清单打包，保留点文件、锁文件和各类源码。
     manifest = source / "templates/projects/catalog.json"
     if manifest.exists():

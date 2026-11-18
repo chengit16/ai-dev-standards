@@ -90,6 +90,26 @@ class ToolkitTests(unittest.TestCase):
         self.assertEqual(doctor(self.layout)["status"], "not_installed")
         self.assertEqual(list(self.home.iterdir()), [])
 
+    def test_update_adds_root_license_and_notice_to_installed_bundle(self):
+        self.install()
+        declarations = {
+            "LICENSE": b"fixture license\n",
+            "NOTICE": b"fixture notice\n",
+        }
+        for name, data in declarations.items():
+            (self.source / name).write_bytes(data)
+
+        result = manage(self.layout, self.source, "update", True)
+        self.assertEqual(result["status"], "deployed")
+        for name, data in declarations.items():
+            self.assertIn(f"bundle/{name}", result["changed_files"])
+            self.assertEqual((self.layout.root / "bundle" / name).read_bytes(), data)
+        self.assertEqual(doctor(self.layout)["status"], "deployed")
+        self.assertEqual(manage(self.layout, self.source, "update", True)["status"], "unchanged")
+        self.assertEqual(
+            manage(self.layout, self.source, "uninstall", True)["status"], "uninstalled"
+        )
+
     def test_install_preserves_original_rules_config_and_full_resources(self):
         original = self.seed()
         config = self.config.read_bytes()
