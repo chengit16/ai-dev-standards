@@ -30,6 +30,6 @@
 2. 核对阶段编号、有效行数及长函数保留理由；检查注释是否解释实际约束，是否与调用方和契约一致。
 3. 当前工具包尚未提供注释自动检查器；这些要求作为开发和评审约束执行。将来结构检查只验证可确定的文件头、声明和阶段标记，不能证明语义正确或替代代码评审。
 
-## 来源
+## 编写依据
 
-2026-11-16 对照 `release-harbor@051696e909f2aabe22d9cc8f12dce183eaeee1b9` 的 `docs/governance/frontend-code-standards.md` 第 6 节、`docs/governance/backend-code-standards.md` 第 6 节，以及 `KnowSpace@cca5e6696ee8c38e919042df8cd144faaa97e1a8` 的 `docs/2026-09-23/开发基线/governance/backend-code-standards.md` 第 8 节提取。共用阈值只在本文件维护。
+本规则整理了文件头、公开接口和复杂流程的注释要求。共用阈值在本文件维护。

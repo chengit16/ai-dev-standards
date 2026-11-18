@@ -90,6 +90,6 @@ ai-dev-standards --help
 
 安装目录内的短命令随 M2 一起更新及卸载。项目记录模板和规范来源，保存在 `.ai-dev-scaffold/manifest.json` 与 `.ai-dev-standards/manifest.json`。使用新发行包更新时运行 `update`，流程同样先预览。
 
-当前提供本地发行文件构建与实测用法。公共发布地址和正式标签将在许可证与发布范围确定后补充。
+公开发行文件从 [GitHub Releases](https://github.com/chengit16/ai-dev-standards/releases) 获取。请使用同一版本的工具包与校验文件。
 
 实际执行环境和完整结果见[M5 验证记录](verification/m5-scaffold.md)。

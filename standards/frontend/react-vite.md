@@ -96,14 +96,6 @@ export interface EditorProps {
 - 按[通用规模预警](../common/engineering.md#文件规模与职责预警)检查职责。运行已有格式、Lint、类型、测试和构建检查，检查新增文件、公开接口、字段及阶段注释。未建立的检查不得报告为已通过。
 - 验证请求取消、旧响应隔离、失败恢复、冲突保留草稿及关键用户流程。界面改动按影响验证桌面、窄屏、键盘和焦点；路由改动验证刷新、深链和前进后退。测试优先通过角色、标签和可见行为定位，网络替身放在 Service 边界。
 
-## 参考与取舍
+## 编写取舍
 
-提取日期：2026-11-16。
-
-| 来源版本 | 参考位置 | 采用内容 |
-| --- | --- | --- |
-| `main-platform@ee79adac06934bff9f600fbf04dc11cbeefd0e4f` | `docs/rules/coding-standards.md`、`src/api/apiClient.ts`、`src/App.tsx`、`uno.config.ts` | Zustand、React Router、UnoCSS、Axios 单一入口与领域 Service。 |
-| `release-harbor@051696e909f2aabe22d9cc8f12dce183eaeee1b9` | `docs/governance/frontend-code-standards.md`、`apps/web/src/main.tsx`、`apps/web/src/api/client.ts` | Ant Design 直接接入、全局主题、响应运行时解码。 |
-| `KnowSpace@cca5e6696ee8c38e919042df8cd144faaa97e1a8` | `docs/2026-09-23/开发基线/governance/frontend-code-standards.md`、`apps/web/src/main.tsx` | 工作区状态隔离、React Router 与查询缓存边界。 |
-
-技术组合按本工具包已确认的选型执行。参考项目的内部组件库、微前端桥接、动态菜单协议与旧错误拦截实现不纳入通用模板。
+按已确认的技术组合使用 Zustand、React Router、UnoCSS、Ant Design 和统一的 Axios 请求层。公开规则保留应用布局、运行时响应校验、工作区状态隔离和按需查询缓存。内部组件库、菜单协议和微前端桥接由需要它们的项目自行定义。
