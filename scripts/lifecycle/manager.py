@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .model import (
     BEGIN,
+    COMMIT_SKILL,
     END,
     OWNER,
     SKILLS,
@@ -18,6 +19,7 @@ from .model import (
     bundled_skills,
     encoded,
     global_block,
+    installed_skills,
     locate_block,
     node,
     regular,
@@ -48,7 +50,7 @@ def installed(layout: Layout) -> tuple[dict | None, bytes | None]:
         not isinstance(state, dict)
         or state.get("owner") != OWNER
         or type(state.get("schema_version")) is not int
-        or state["schema_version"] != 1
+        or state["schema_version"] not in (1, 2)
         or state.get("layout") != layout.identity()
         or not isinstance(state.get("files"), dict)
         or not isinstance(state.get("block"), str)
@@ -67,15 +69,40 @@ def installed(layout: Layout) -> tuple[dict | None, bytes | None]:
     if agents is None:
         raise InstallError("安装记录存在但全局入口已丢失")
     locate_block(agents, state["block"].encode())
-    for name in bundled_skills(state["files"], "bundle/"):
+    for name in installed_skills(state):
         expected = {"kind": "link", "target": str(layout.root / "bundle/skills" / name)}
         if node(layout.skills / name) != expected:
             raise InstallError(f"Skill 链接被修改或丢失：{name}")
     return state, agents
 
 
+def user_skills(layout: Layout, owned: tuple[str, ...]) -> dict[str, list[Path]]:
+    """扫描用户入口，排除已核实归属的链接。"""
+    roots = {layout.skills, layout.codex / "skills", layout.home / ".codex/skills"}
+    found: dict[str, list[Path]] = {}
+    for root in sorted(roots):
+        if not root.is_dir():
+            continue
+        for entry in sorted(root.iterdir()):
+            if entry.name in owned and entry == layout.skills / entry.name:
+                continue
+            skill = entry / "SKILL.md"
+            if not skill.is_file():
+                continue
+            declared = next(
+                (
+                    line.partition(":")[2].strip().strip("'\"")
+                    for line in skill.read_text().splitlines()
+                    if line.startswith("name:")
+                ),
+                entry.name,
+            )
+            found.setdefault(declared, []).append(skill)
+    return found
+
+
 def host_issues(
-    layout: Layout, legacy_policy: str, skills: tuple[str, ...]
+    layout: Layout, legacy_policy: str, skills: tuple[str, ...], external: dict[str, list[Path]]
 ) -> tuple[list[str], list[str]]:
     """只读检查所选用户布局；项目、管理员和插件层仍需新会话核实。"""
     errors, warnings = [], []
@@ -98,37 +125,19 @@ def host_issues(
                 enabled = entry.get("enabled", True)
         if enabled is False:
             errors.append(f"config.toml 已禁用 Skill：{name}")
-    # 旧路径只用于冲突探测，绝不自动修改使用者的 Skill 或配置。
-    roots = {layout.skills, layout.codex / "skills", layout.home / ".codex/skills"}
-    legacy = []
-    for root in sorted(roots):
-        if not root.is_dir():
-            continue
-        for entry in root.iterdir():
-            skill = entry / "SKILL.md"
-            if not skill.is_file():
-                continue
-            text = skill.read_text()
-            declared = next(
-                (
-                    line.partition(":")[2].strip().strip("'\"")
-                    for line in text.splitlines()
-                    if line.startswith("name:")
-                ),
-                entry.name,
-            )
-            if declared == "git-commit-message":
-                legacy.append(str(skill))
-            if declared in skills and entry != layout.skills / declared:
-                errors.append(f"其他用户目录有同名 Skill：{skill}")
-    if legacy:
-        message = "检测到旧 git-commit-message；" + "、".join(legacy)
+        if name != COMMIT_SKILL:
+            for skill in external.get(name, ()):
+                errors.append(f"用户目录有同名 Skill：{skill}")
+    personal = external.get(COMMIT_SKILL)
+    if personal:
+        message = f"检测到个人 {COMMIT_SKILL}：" + "、".join(map(str, personal))
         if legacy_policy == "keep":
-            warnings.append(
-                message + "；已明确保留，默认收尾使用 finish-task，旧入口仅明确点名时使用"
-            )
+            if COMMIT_SKILL in skills:
+                errors.append(message + "；与工具包入口重复，请更新以保留个人版")
+            else:
+                warnings.append(message + "；使用个人入口，默认收尾使用 finish-task")
         else:
-            errors.append(message + "；确认保留时使用 --legacy-policy keep，不自动改写旧 Skill")
+            errors.append(message + "；确认保留时使用 --legacy-policy keep")
     return errors, warnings
 
 
@@ -139,8 +148,13 @@ def doctor(layout: Layout) -> dict:
     state = None
     try:
         state, agents = installed(layout)
-        skills = bundled_skills(state["files"], "bundle/") if state else SKILLS
-        errors, warnings = host_issues(layout, state["legacy_policy"] if state else "stop", skills)
+        owned = installed_skills(state) if state else ()
+        errors, warnings = host_issues(
+            layout,
+            state["legacy_policy"] if state else "stop",
+            owned if state else SKILLS,
+            user_skills(layout, owned),
+        )
         problems.extend(errors)
         if agents and len(agents) > 32768:
             warnings.append("全局入口超过 32 KiB，请核对宿主实际加载预算和项目规则总量")
@@ -182,13 +196,17 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
     if action == "update" and state is None:
         raise InstallError("尚未安装，请先 install")
     policy = legacy or (state["legacy_policy"] if state else "stop")
-    owned = bundled_skills(state["files"], "bundle/") if state else ()
+    owned = installed_skills(state) if state else ()
+    external = user_skills(layout, owned)
     if action == "uninstall":
         skills = owned
     else:
         files, version = bundle(source)
         skills = bundled_skills(files)
-    errors, warnings = host_issues(layout, policy, skills)
+        # keep 让个人入口优先，升级时也可移除已纳管的重复链接。
+        if policy == "keep" and COMMIT_SKILL in external:
+            skills = tuple(name for name in skills if name != COMMIT_SKILL)
+    errors, warnings = host_issues(layout, policy, skills, external)
     if action != "uninstall" and errors:
         raise InstallError("；".join(errors))
     active = {"agents", "root", *owned, *skills}
@@ -224,7 +242,8 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
             target.chmod(0o755 if name == "scripts/ai-dev-standards" else 0o644)
         manifest = {
             "owner": OWNER,
-            "schema_version": 1,
+            # 旧版无法识别新增链接归属，拒绝让旧安装器更新或卸载这份清单。
+            "schema_version": 2,
             "layout": layout.identity(),
             "files": tree_files(stage / "root"),
             "source": version,
@@ -232,6 +251,7 @@ def prepare(layout: Layout, source: Path, action: str, legacy: str | None, stage
             "separator": separator,
             "agents_created": created,
             "legacy_policy": policy,
+            "skill_links": list(skills),
         }
         (stage / "root/manifest.json").write_bytes(encoded(manifest))
         (stage / "root/manifest.json").chmod(0o644)

@@ -153,7 +153,7 @@ def add_target_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--home", type=Path, help="隔离验收的用户目录；指定后不继承 CODEX_HOME")
     parser.add_argument("--codex-home", type=Path, help="显式 Codex 配置目录")
     parser.add_argument("--apply", action="store_true", help="实际写入；默认只预览")
-    parser.add_argument("--legacy-policy", choices=("stop", "keep"), help="明确保留旧提交 Skill")
+    parser.add_argument("--legacy-policy", choices=("stop", "keep"), help="明确保留个人提交 Skill")
 
 
 def main() -> int:

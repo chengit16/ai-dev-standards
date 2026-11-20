@@ -57,7 +57,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 
 - [安装与本机验收](docs/installation.md)：M2 预览、部署、诊断、更新、卸载与中断恢复。
 
-- [工作流 Skills](skills/README.md)：提取规范、接入项目和开发收尾。
+- [工作流 Skills](skills/README.md)涵盖规范提取、项目接入、开发收尾与按需提交推送。
 - [开发规范库](standards/README.md)：规范入口、组合方式与适用范围。
 - [接入项目规则](docs/project-bootstrap.md)：已有项目的配置、预览、应用和验证。
 - [创建工程与验证](docs/project-scaffold.md)：M5 模板创建、检查及免克隆发行包用法。
@@ -75,7 +75,7 @@ cp templates/project-bootstrap/config.example.json ../project-config.json
 | --- | --- |
 | `rules/` | 分发到使用者电脑的全局规则 |
 | `standards/` | 通用、前端和后端规范及示例 |
-| `skills/` | 规范提取、项目初始化和开发收尾工作流 |
+| `skills/` | 规范提取、项目初始化、开发收尾与按需提交推送 |
 | `templates/` | 项目规则、任务配置及空白工程模板 |
 | `scripts/` | 项目初始化、开发收尾及安装生命周期工具 |
 | `versions/` | 版本策略与兼容说明 |

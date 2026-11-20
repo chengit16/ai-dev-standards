@@ -12,14 +12,15 @@ from pathlib import Path
 
 OWNER = "ai-dev-standards"
 BASE_SKILLS = ("project-bootstrap", "finish-task")
-SKILLS = (*BASE_SKILLS, "extract-standards")
+COMMIT_SKILL = "git-commit-message"
+SKILLS = (*BASE_SKILLS, "extract-standards", COMMIT_SKILL)
 BEGIN = "<!-- AI-DEV-STANDARDS:GLOBAL:BEGIN -->"
 END = "<!-- AI-DEV-STANDARDS:GLOBAL:END -->"
 STAMP = "_toolkit-source.json"
 
 
 def bundled_skills(files: dict, prefix: str = "") -> tuple[str, ...]:
-    """按受管资源判断 Skill 集合，使两项 Skill 的旧安装可直接升级。"""
+    """按实际打包内容判断可部署的 Skill，兼容只包含早期工作流的来源。"""
     return (
         *BASE_SKILLS,
         *(
@@ -28,6 +29,21 @@ def bundled_skills(files: dict, prefix: str = "") -> tuple[str, ...]:
             if name not in BASE_SKILLS and f"{prefix}skills/{name}/SKILL.md" in files
         ),
     )
+
+
+def installed_skills(state: dict) -> tuple[str, ...]:
+    """只根据安装清单确认链接归属，保留个人版时仍可打包同名源码。"""
+    available = bundled_skills(state["files"], "bundle/")
+    without_commit = tuple(name for name in available if name != COMMIT_SKILL)
+    if state["schema_version"] == 1:
+        # 旧清单从未管理提交 Skill，即便当时的来源额外携带了该目录。
+        return without_commit
+    links = state.get("skill_links")
+    if links == list(available):
+        return available
+    if state["legacy_policy"] == "keep" and links == list(without_commit):
+        return without_commit
+    raise InstallError("安装清单中的 Skill 链接与打包内容或保留策略不匹配")
 
 
 class InstallError(Exception):

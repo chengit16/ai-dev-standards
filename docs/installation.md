@@ -22,7 +22,7 @@ toolkit="${CODEX_HOME:-$HOME/.codex}/ai-dev-standards/bundle/scripts/ai-dev-stan
 "$toolkit" doctor
 ```
 
-检测到旧 `git-commit-message` Skill 时，如需保留，在两次安装命令都加 `--legacy-policy keep`。若只想先体验，创建 `trial_home=$(mktemp -d)`，在安装、更新和诊断命令中都加 `--home "$trial_home"`，并将上例的 `toolkit` 设为 `"$trial_home/.codex/ai-dev-standards/bundle/scripts/ai-dev-standards"`。
+已有个人版 `git-commit-message` 时，按[保留个人版提交 Skill](#保留个人版提交-skill)添加参数。若只想先体验，创建 `trial_home=$(mktemp -d)`，在安装、更新和诊断命令中都加 `--home "$trial_home"`，并将上例的 `toolkit` 设为 `"$trial_home/.codex/ai-dev-standards/bundle/scripts/ai-dev-standards"`。
 
 已有安装时，先将 `release_version` 改为目标正式版本，再把 `install` 换成 `update`：
 
@@ -36,30 +36,26 @@ python3 install_release.py update --version "$release_version" --apply
 
 版本未发布、网络失败、附件缺失或校验不符时，命令在写入用户目录前停止。发生写入中断时按[恢复步骤](#失败和中断恢复)处理。离线时可继续使用完整源码或已经校验的 `.pyz` 执行 `install`、`update` 和 `doctor`。[离线发行包用法](project-scaffold.md#使用固定版本的发行文件)
 
-## 本机首次验收
+## 保留个人版提交 Skill
 
-在完整工具包仓库根目录运行：
-
-```bash
-./scripts/ai-dev-standards install
-```
-
-核对输出的目标目录、拟变更资源与文件清单。默认将全局区块写入所选 Codex home 的 `AGENTS.md`，在其中保留一份完整工具包副本，并为工具包提供的 Skills 建立链接。
-
-如果检测到旧 `git-commit-message`，安装器会停止。明确保留旧入口时，先预览，再应用：
+没有个人版时，包含此 Skill 的版本会为工具包版建立入口。检测到个人版时，安装或更新会提示加 `--legacy-policy keep`。指定后继续沿用个人入口，未来更新会沿用已记录的选择。先预览，再应用。下面以源码更新为例：
 
 ```bash
-./scripts/ai-dev-standards install --legacy-policy keep
-./scripts/ai-dev-standards install --legacy-policy keep --apply
+./scripts/ai-dev-standards update --legacy-policy keep
+./scripts/ai-dev-standards update --legacy-policy keep --apply
 ./scripts/ai-dev-standards doctor
 ```
 
-没有旧入口时，在预览确认后可使用 `./scripts/ai-dev-standards install --apply`。`keep` 会保留旧 Skill，受管全局规则默认使用 `finish-task`，旧入口在用户明确点名时使用。推送需要明确授权。以后更新会保留已经记录的选择。
+首次安装把 `update` 改成 `install`。按发行版本安装或更新时，也在对应命令里加同一个参数。以后移走个人版，再执行更新即可建立工具包版入口。日常开发仍由 `finish-task` 收尾，提交推送用法见[工作流 Skills](../skills/README.md)。
+
+## 本机首次验收
+
+在完整工具包仓库根目录执行 `./scripts/ai-dev-standards install`。核对目标目录、拟变更资源与文件清单后，追加 `--apply`，再执行 `./scripts/ai-dev-standards doctor`。安装器将全局区块写入所选 Codex home 的 `AGENTS.md`，并为本次纳管的 Skills 建立链接。
 
 `doctor` 返回 `deployed` 只表示受管文件、链接与清单一致，`host_loading` 始终为 `not_verified`。下一步在目标项目新建会话：
 
 1. 请助手指出本次读取的全局与项目规则来源，并确认中文文档、默认本地提交及推送单独授权。
-2. 确认 `project-bootstrap`、`finish-task` 和 `extract-standards` 可发现，真实路径指向本次安装副本；入口为符号链接时先解析实际目录。
+2. 确认 `project-bootstrap`、`finish-task` 和 `extract-standards` 指向安装副本。`git-commit-message` 应只有一个有效入口，按选择指向安装副本或个人版。在一次性测试仓库用「`$git-commit-message` 只生成提交信息」验证预览。
 3. 在一次性测试仓库完成[项目初始化](project-bootstrap.md)，核对目录、差异与来源信息，重复执行应无需写入。
 4. 修改一个小功能并运行[开发收尾](finish-task.md)，验证真实检查、提交 SHA 与已有改动保留。未明确授权时不推送。
 
@@ -71,18 +67,21 @@ python3 install_release.py update --version "$release_version" --apply
 | --- | --- |
 | `CODEX_HOME/AGENTS.md` | 只管理 GLOBAL BEGIN/END 标记之间的工具包区块 |
 | `CODEX_HOME/ai-dev-standards/bundle/` | 完整运行副本，包含规范、Skills、脚本、模板与使用文档 |
-| `CODEX_HOME/ai-dev-standards/manifest.json` | 记录安装布局、来源、文件指纹及旧 Skill 选择 |
+| `CODEX_HOME/ai-dev-standards/manifest.json` | 记录安装布局、来源、文件指纹、受管链接及个人版保留选择 |
 | `HOME/.agents/skills/project-bootstrap` | 指向安装副本中初始化 Skill 的链接 |
 | `HOME/.agents/skills/finish-task` | 指向安装副本中收尾 Skill 的链接 |
 | `HOME/.agents/skills/extract-standards` | 指向安装副本中规范提取 Skill 的链接 |
+| `HOME/.agents/skills/git-commit-message` | 由工具包提供提交 Skill 时创建 |
 | `CODEX_HOME/.ai-dev-standards-backups/` | 操作前后快照与恢复日志，卸载后仍保留 |
 | `CODEX_HOME/.ai-dev-standards.lock` | 并发与中断保护，记录进程、主机和对应事务 |
+
+包含提交 Skill 的版本可以升级早期安装。升级后请使用当前安装副本诊断和卸载。早期发行包无法读取新清单，如需回到早期发行版，先用当前版本卸载，再安装目标版本。
 
 未设置 `CODEX_HOME` 时默认使用 `~/.codex`；也可显式指定 `--codex-home`。Skill 用户目录仍基于 HOME，不跟着 CODEX_HOME 移动，因此同一用户不能把同名 Skill 同时安装到两个不同 profile。
 
 此布局依据[官方 AGENTS 机制](https://learn.chatgpt.com/docs/agent-configuration/agents-md)及[官方 Skill 发现机制](https://learn.chatgpt.com/docs/build-skills)核对：全局覆盖文件优先，用户 Skill 目录支持符号链接，同名 Skill 不自动合并。安装器只检查所选用户布局；项目级、管理员、插件入口、运行中的宿主状态以及分层配置覆盖，仍需新会话核实。
 
-安装不修改 `config.toml`、旧 Skill、其他全局规则、业务仓库或 Git 全局配置。非空 `AGENTS.override.md`、显式禁用新 Skill、同名目录或声明同名的用户 Skill、无归属记录的旧内容都会停止安装。配置按所选 home 中的 `skills.config` 顺序检查 name/path 与 enabled；不自动修改宿主禁用设置。若全局规则较大，doctor 提醒核对加载预算，不自行调整宿主限制。
+安装保留 `config.toml`、个人 Skills、其他全局规则、业务仓库及 Git 全局配置。非空 `AGENTS.override.md`、显式禁用拟部署的 Skill、同名冲突或无归属记录的内容会停止安装。`git-commit-message` 的同名个人入口可按上述方式保留。安装器按所选 home 中的 `skills.config` 顺序检查 name/path 与 enabled。若全局规则较大，doctor 会提醒核对加载预算。
 
 仓库根 `AGENTS.md` 在 bundle 中仅作为维护文档保留；安装到全局的正文来自独立的 [rules/global.md](../rules/global.md)。源码目录不是运行依赖，删除原克隆后安装副本仍可执行 M3/M4、诊断及卸载；安装或更新必须使用独立来源，不能从安装副本内部覆盖自身。
 

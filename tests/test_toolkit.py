@@ -118,9 +118,10 @@ class ToolkitTests(unittest.TestCase):
         self.assertTrue(self.agents.read_bytes().startswith(original))
         self.assertEqual(self.config.read_bytes(), config)
         self.assertEqual(doctor(self.layout)["host_loading"], "not_verified")
-        for name in ("project-bootstrap", "finish-task", "extract-standards"):
+        for name in ("project-bootstrap", "finish-task", "extract-standards", "git-commit-message"):
             link = self.layout.skills / name
             self.assertTrue(link.is_symlink())
+            self.assertTrue((link / "SKILL.md").is_file())
             self.assertTrue((link / "../../scripts/toolkit.py").is_file())
         self.assertTrue((self.layout.root / "bundle/standards/common/comments.md").is_file())
         self.assertEqual((Path(result["backup"]) / "before/agents").read_bytes(), original)
@@ -275,19 +276,78 @@ class ToolkitTests(unittest.TestCase):
         )
         self.assertEqual(override.read_text(), "后加覆盖规则")
 
-    def test_legacy_is_kept_only_after_explicit_choice(self):
-        legacy = self.layout.codex / "skills/git-commit-message/SKILL.md"
-        legacy.parent.mkdir(parents=True)
-        legacy.write_text("---\nname: git-commit-message\n---\n用户原技能\n")
-        before = legacy.read_bytes()
-        with self.assertRaises(InstallError):
-            self.install()
-        self.assertEqual(self.install(legacy="keep")["status"], "deployed")
-        report = doctor(self.layout)
-        self.assertTrue(any("旧 git-commit-message" in value for value in report["warnings"]))
-        self.assertEqual(legacy.read_bytes(), before)
-        manage(self.layout, self.source, "uninstall", True)
-        self.assertEqual(legacy.read_bytes(), before)
+    def test_personal_commit_skill_is_kept_only_after_explicit_choice(self):
+        link = self.layout.skills / "git-commit-message"
+        bundled = self.layout.root / "bundle/skills/git-commit-message/SKILL.md"
+        for personal in (
+            self.layout.codex / "skills/personal-commit/SKILL.md",
+            link / "SKILL.md",
+        ):
+            with self.subTest(personal=personal):
+                personal.parent.mkdir(parents=True)
+                personal.write_text("---\nname: git-commit-message\n---\n用户原技能\n")
+                before = personal.read_bytes()
+                with self.assertRaisesRegex(InstallError, "--legacy-policy keep"):
+                    self.install()
+                self.assertEqual(self.install(legacy="keep")["status"], "deployed")
+                self.assertEqual(self.install()["status"], "unchanged")
+                report = doctor(self.layout)
+                self.assertEqual(report["status"], "deployed")
+                self.assertTrue(any(str(personal) in value for value in report["warnings"]))
+                self.assertFalse(link.is_symlink())
+                self.assertTrue(bundled.is_file())
+                self.assertEqual(
+                    manage(self.layout, self.source, "update", True)["status"], "unchanged"
+                )
+                manage(self.layout, self.source, "uninstall", True)
+                self.assertEqual(personal.read_bytes(), before)
+                personal.unlink()
+                personal.parent.rmdir()
+
+    def test_commit_skill_upgrades_old_manifest_with_or_without_personal_version(self):
+        link = self.layout.skills / "git-commit-message"
+        manifest = self.layout.root / "manifest.json"
+        personal = self.layout.codex / "skills/git-commit-message/SKILL.md"
+        previous_source = self.base / "previous-source"
+        shutil.copytree(
+            self.source, previous_source, ignore=shutil.ignore_patterns("git-commit-message")
+        )
+        for keep in (False, True):
+            with self.subTest(keep=keep):
+                if keep:
+                    personal.parent.mkdir(parents=True)
+                    personal.write_text("---\nname: git-commit-message\n---\n用户原技能\n")
+                manage(self.layout, previous_source, "install", True, "keep" if keep else None)
+                # 模拟旧发行版的清单格式及已记录的保留选择。
+                state = json.loads(manifest.read_bytes())
+                state["schema_version"] = 1
+                del state["skill_links"]
+                manifest.write_text(json.dumps(state))
+                self.assertEqual(doctor(self.layout)["status"], "deployed")
+                self.assertEqual(
+                    manage(self.layout, self.source, "update", True)["status"], "deployed"
+                )
+                self.assertEqual(link.is_symlink(), not keep)
+                self.assertEqual(doctor(self.layout)["status"], "deployed")
+                manage(self.layout, self.source, "uninstall", True)
+                self.assertFalse(link.is_symlink())
+                self.assertEqual(personal.is_file(), keep)
+
+    def test_update_can_switch_between_managed_and_personal_commit_skill(self):
+        self.install()
+        link = self.layout.skills / "git-commit-message"
+        personal = self.layout.codex / "skills/git-commit-message/SKILL.md"
+        personal.parent.mkdir(parents=True)
+        personal.write_text("---\nname: git-commit-message\n---\n用户原技能\n")
+        self.assertEqual(doctor(self.layout)["status"], "conflict")
+        self.assertEqual(
+            manage(self.layout, self.source, "update", True, "keep")["status"], "deployed"
+        )
+        self.assertFalse(link.is_symlink())
+        self.assertEqual(personal.read_text(), "---\nname: git-commit-message\n---\n用户原技能\n")
+        personal.unlink()
+        self.assertEqual(manage(self.layout, self.source, "update", True)["status"], "deployed")
+        self.assertTrue(link.is_symlink())
 
     def test_duplicate_declared_name_and_symlink_parent_rejected(self):
         duplicate = self.layout.codex / "skills/another-name/SKILL.md"
